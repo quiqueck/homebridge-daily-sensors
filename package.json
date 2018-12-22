@@ -1,0 +1,36 @@
+{
+  "name": "homebridge-daylight-sensors",
+  "version": "0.0.1",
+  "description": "Daylight Sensor Plugin for Homebridge that provides a list of predefined (and customizable) sensors that trigger at certain sun positions.",
+  "main": "index.js",
+  "dependencies": {
+    "columnify": "^1.5.4",
+    "moment": "^2.23.0",
+    "suncalc": "^1.8.0"
+  },
+  "devDependencies": {
+    "hap-nodejs": "^0.4.47"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "solar",
+    "daylight",
+    "sensor"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/quiqueck/homebridge-daylight-sensors"
+  },
+  "bugs": {
+    "url": "http://github.com/quiqueck/homebridge-daylight-sensors/issues"
+  },
+  "engines": {
+    "node": ">=9.0.0",
+    "homebridge": ">=0.2.0"
+  },
+  "scripts": {
+    "start": "node testenv/test.js"
+  },
+  "author": "F. Bauer",
+  "license": "MIT"
+}

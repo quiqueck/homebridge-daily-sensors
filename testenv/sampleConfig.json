@@ -1,0 +1,27 @@
+{
+    "name":"Tageszeit",
+    "dayStartsActive":false,
+    "tickTimer":30000,
+    "trigger":[        
+        {
+            "active":true,
+            "type":"time",
+            "value":"6:15"
+        },
+        {
+            "active":false,
+            "type":"time",
+            "value":"9:00 PM",
+            "trigger":"less"
+        },
+        {
+            "active":false,
+            "type":"altitude",
+            "value":"0"
+        }
+    ],
+    "location":{
+        "longitude":-0.118092,
+        "latitude":51.509865
+    }
+}
