@@ -5,7 +5,9 @@
   "main": "index.js",
   "dependencies": {
     "columnify": "^1.5.4",
+    "express": "^4.16.4",
     "moment": "^2.23.0",
+    "path": "^0.12.7",
     "suncalc": "^1.8.0"
   },
   "devDependencies": {

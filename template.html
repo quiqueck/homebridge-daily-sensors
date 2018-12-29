@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- meta -->
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Tageszeit Info</title>
+        <style>
+            bar {
+                display:inline-block;
+                width:10px;
+                background.color
+            }
+        </style>
+        <link rel="stylesheet" href="css/bootstrap.css">
+        <script src="js/d3.js"></script>
+        <script src="js/bootstrap.js"></script>
+    </head>
+
+    <body>
+        <svg width="800" height="400"></svg>
+        <table class="table table-hover thead-dark">{{TABLE}}</table>
+    </body>
+    <script >
+        const stackMax = layer => d3.max(layer, d => d[1])
+        const stackMin = layer => d3.min(layer, d => d[0])
+        
+        var layers = {{DATA}};
+
+        console.log(layers, d3.min(layers, stackMin), d3.max(layers, stackMax));
+        var svg = d3.select("svg"),
+            width = +svg.attr("width"),
+            height = +svg.attr("height")
+        
+        var x = d3.scaleLinear()
+            .domain([0, layers[0].length])
+            .range([0, width])
+        
+        var y = d3.scaleLinear()
+            .domain([d3.min(layers, stackMin), d3.max(layers, stackMax)])
+            .range([height, 0])
+        
+        var z = ['#f0f0f0','#ff0000', '#0000ff']
+        
+        var area = d3.area()
+            .x((d, i) => x(i))
+            .y0(d => y(d[0]))
+            .y1(d => y(d[1]))
+        
+        svg.selectAll("path")
+           .data(layers)
+           .enter().append("path")
+             .attr("d", area)
+             .attr("fill", (d, i) => z[i])
+    </script>
+</html>

@@ -3,7 +3,9 @@ const suncalc = require('suncalc'),
       columnify = require('columnify');
 
 const sampleConfig = require('./sampleConfig.json');
-function nulllog(){};
+function nulllog(msg){
+    console.log(msg);
+};
 
 
 console.log(sampleConfig);

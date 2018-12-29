@@ -1,7 +1,9 @@
 {
+    "accessory": "DaylightSensors",
     "name":"Tageszeit",
+    "port":8081,
+    "tickTimer":10000,
     "dayStartsActive":false,
-    "tickTimer":30000,
     "trigger":[        
         {
             "active":true,
@@ -11,13 +13,12 @@
         {
             "active":false,
             "type":"time",
-            "value":"9:00 PM",
-            "trigger":"less"
+            "value":"9:00 PM"
         },
         {
             "active":false,
             "type":"altitude",
-            "value":"0"
+            "value":"0.03"
         }
     ],
     "location":{
