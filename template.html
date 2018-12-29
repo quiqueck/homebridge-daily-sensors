@@ -7,52 +7,211 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>Tageszeit Info</title>
+        
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <script src="js/d3.js"></script>
+
         <style>
-            bar {
-                display:inline-block;
-                width:10px;
-                background.color
+            .overlay {
+                fill: none;
+                pointer-events: all;                
+            }
+
+            .focus text, .focusLux text {
+                font-size: 75%;
+            }
+
+            .focus line {
+                stroke: rgba(70, 131, 180, 0.4);
+            }
+
+            .focusLux line {
+                stroke: rgba(180, 127, 70, 0.4);
+            }
+
+            .focus circle {
+                fill: white;
+                stroke: steelblue;
+            }
+
+            .focusLux circle {
+                fill: white;
+                stroke: rgb(180, 127, 70);
             }
         </style>
-        <link rel="stylesheet" href="css/bootstrap.css">
-        <script src="js/d3.js"></script>
-        <script src="js/bootstrap.js"></script>
     </head>
 
     <body>
-        <svg width="800" height="400"></svg>
+        <svg width="800" height="500"></svg>
         <table class="table table-hover thead-dark">{{TABLE}}</table>
     </body>
     <script >
-        const stackMax = layer => d3.max(layer, d => d[1])
-        const stackMin = layer => d3.min(layer, d => d[0])
-        
-        var layers = {{DATA}};
+        function remap(data){
+            var result = [];
+            for (const value of data) {
+                const div = Math.max(0.001, Math.max(Math.abs(value.min), Math.abs(value.max)));
+                value.scale = div;
+                for (const entry of value.data){
+                    entry.date = new Date(entry.date);
+                    entry.normalizedValue = entry.value/div;
+                    entry.normalized = [entry.values[0]/div, entry.values[1]/div];
+                    result.push(entry);
+                }
+            }
+            return result;
+        }
 
-        console.log(layers, d3.min(layers, stackMin), d3.max(layers, stackMax));
-        var svg = d3.select("svg"),
-            width = +svg.attr("width"),
-            height = +svg.attr("height")
+        const data = {{DATA}};
+        const flat = remap(data);
         
-        var x = d3.scaleLinear()
-            .domain([0, layers[0].length])
-            .range([0, width])
-        
+        const svg = d3.select('svg'),
+              width = +svg.attr("width"),
+              height = +svg.attr("height"),
+              margin = ({top: 0, right: 20, bottom: 30, left: 20});        
+         
+        var x = d3.scaleTime()
+            .domain(d3.extent(flat, d => d.date))
+            .range([margin.left, width - margin.right])
+
         var y = d3.scaleLinear()
-            .domain([d3.min(layers, stackMin), d3.max(layers, stackMax)])
-            .range([height, 0])
+            .domain([
+                d3.min(flat, d => d.normalized[0] ), 
+                d3.max(flat, d => d.normalized[1] )
+            ])
+            .range([height - margin.bottom, margin.top])
+
+        var y0 = d3.scaleLinear()
+            .domain([
+                d3.min(flat, d => d.normalized[0]*data[1].scale ), 
+                d3.max(flat, d => d.normalized[1]*data[1].scale )
+            ])
+            .range([height - margin.bottom, margin.top])
+
+        var y1 = d3.scaleLinear()
+            .domain([
+                d3.min(flat, d => d.normalized[0]*data[2].scale ), 
+                d3.max(flat, d => d.normalized[1]*data[2].scale )
+            ])
+            .range([height - margin.bottom, margin.top])
+            
+        var xAxis = g => g
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(d3.axisBottom(x).ticks(width / 60).tickSizeOuter(0))
+            .call(g => g.select(".domain").remove())
+            
+        var y0Axis = g => g
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisRight(y0).ticks(height / 60).tickSizeOuter(0).tickFormat(v => v+"°"))
+            .call(g => g.select(".domain").remove())
+            
+        var y1Axis = g => g
+            .attr("transform", `translate(${width-margin.right},0)`)
+            .call(d3.axisLeft(y1).ticks(height / 60).tickSizeOuter(0))
+            .call(g => g.select(".domain").remove())
+
+        var color = [];
+        color['active'] = '#f0f0f0';
+        color['altitude'] = '#12d0ff';
+        color['lux'] = '#eeaa00dd';
+
+        areaBlocky = d3.area()
+            .curve(d3.curveStepAfter)
+            .x(d => x(d.date))
+            .y0(d => y(d.normalized[0]))
+            .y1(d => y(d.normalized[1]))
+
+        area = d3.area()
+            .curve(d3.curveCatmullRom)
+            .x(d => x(d.date))
+            .y0(d => y(d.normalized[0]))
+            .y1(d => y(d.normalized[1]))
+
+        svg.append("g")
+            .selectAll("path.area")            
+            .data(data.map(d => [d.name, d.data, d.blocky]))
+                .attr("class", "area")
+            .enter().append("path")
+                .attr("fill", ([name]) => color[name])
+                .attr("d", ([, values, bl]) => bl?areaBlocky(values):area(values))
+            .append("title")
+                .text(([name]) => name);
+
+        svg.append("g")
+            .attr("class", "xaxis")
+            .call(xAxis);
+            
+        svg.append("g")
+            .attr("class", "y0axis")
+            .call(y0Axis);
+            
+        svg.append("g")
+            .attr("class", "y1axis")
+            .call(y1Axis);
         
-        var z = ['#f0f0f0','#ff0000', '#0000ff']
-        
-        var area = d3.area()
-            .x((d, i) => x(i))
-            .y0(d => y(d[0]))
-            .y1(d => y(d[1]))
-        
-        svg.selectAll("path")
-           .data(layers)
-           .enter().append("path")
-             .attr("d", area)
-             .attr("fill", (d, i) => z[i])
+        var focus = svg.append("g")
+            .attr("class", "focus")
+            .style("display", "none");
+
+        focus.append("line")
+            .attr("x1", 0)
+            .attr("x2", 0)
+            .attr("y1", -height)
+            .attr("y2", height);
+
+        focus.append("line")
+            .attr("x1", -width+'px')
+            .attr("x2", 0)
+            .attr("y1", 0)
+            .attr("y2", 0);
+
+        focus.append("circle")
+            .attr("r", 4.5);
+
+        focus.append("text")
+            .attr("x", 9)
+            .attr("dy", ".35em");
+
+
+        var focusLux = svg.append("g")
+            .attr("class", "focusLux")
+            .style("display", "none");
+
+        focusLux.append("line")
+            .attr("x1", 0)
+            .attr("x2", width+'px')
+            .attr("y1", 0)
+            .attr("y2", 0);
+
+        focusLux.append("circle")
+            .attr("r", 4.5);
+
+        svg.append("rect")
+            .attr("class", "overlay")
+            .attr("width", width)
+            .attr("height", height)
+            .on("mouseover", function() { focus.style("display", null); focusLux.style("display", null);})
+            .on("mouseout", function() { focus.style("display", "none"); focusLux.style("display", "none");})
+            .on("mousemove", mousemove);
+
+        var bisectDate = d3.bisector(d => d.date).left;
+        function mousemove() {            
+            var x0 = x.invert(d3.mouse(this)[0]),
+                i = bisectDate(data[1].data, x0, 1),
+                d = data[1].data[i],
+                iLux = bisectDate(data[2].data, x0, 1),
+                dLux = data[2].data[i],
+                iAct = bisectDate(data[0].data, x0, 1),
+                dAct = data[0].data[i];
+            
+            focus.attr("transform", "translate(" + x(d.date) + "," + y(d.normalizedValue) + ")");
+            focusLux.attr("transform", "translate(" + x(dLux.date) + "," + y(dLux.normalizedValue) + ")");
+
+            focus.select("text").html('');
+            focus.select("text")
+                .append('tspan').attr('x', 6).attr('y', '0em').text(d.time)
+                .append('tspan').attr('x', 6).attr('y', '1.8em').text('Active: ' + (dAct.value==0 ? 'no' : 'yes'))
+                .append('tspan').attr('x', 6).attr('y', '2.8em').text('Altitude: ' + (Math.round(d.value * 100)/100) + '°')
+                .append('tspan').attr('x', 6).attr('y', '3.8em').text('Lux: ' + Math.round(dLux.value));
+        }
     </script>
 </html>

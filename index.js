@@ -214,11 +214,11 @@ class DaylightSensors {
             expressApp.get("/js/d3.js", (request, response) => {               
                 response.sendFile(path.join(__dirname, './js/d3.v5.min.js'));           
             }); 
-            expressApp.get("/js/bootstrap.js", (request, response) => {               
-                response.sendFile(path.join(__dirname, './js/bootstrap.min.js'));           
-            });  
-            expressApp.get("/css/bootstrap.css", (request, response) => {               
+            expressApp.get("/css/bootstrap.min.css", (request, response) => {               
                 response.sendFile(path.join(__dirname, './css/bootstrap.min.css'));           
+            }); 
+            expressApp.get("/css/bootstrap.min.css.map", (request, response) => {               
+                response.sendFile(path.join(__dirname, './css/bootstrap.min.css.map'));           
             });  
             this.log("HTTP listener started.");
         }
@@ -530,19 +530,37 @@ class DaylightSensors {
         const start = moment({h: 0, m: 0, s: 1})
         let offset = 0;
         let p = 0;
-        let data = [[],[],[]];
-        let tableHTML = '';
-        //moment.locale('de');
+        let data = [
+            {data:[], min:-1, max:+1, name:'active', blocky:true},
+            {data:[], min:-90, max:90, name:'altitude', blocky:false},
+            {data:[], min:0, max:100000, name:'lux', blocky:false}];
+
+        let tableHTML = '';        
         while (offset < 60*24) {
-            const mom = start.add(5, 'minutes');            
+            const mom = start.add(1, 'minutes');            
             const when = mom.toDate();
             const obj = this.testIfActive(when);
             console.log(when, obj.active);
 
-            data[1][p] = [Math.min(obj.pos.altitude/(Math.PI/2), 0), Math.max(obj.pos.altitude/(Math.PI/2), 0)];
-            data[2][p] = [Math.min(obj.lux/100000, 0), Math.max(obj.lux/100000, 0)]; 
-            data[0][p] = [obj.active ? 0 : -1, obj.active ? 0 : 1];             
-            offset += 5;
+            data[0].data[p] = {
+                date : mom.toDate(),
+                value : obj.active ? 1 : 0,
+                time : mom.format('LT'),
+                values : [obj.active ? 0 : -1, obj.active ? 0 : 1]
+            }; 
+            data[1].data[p] = {
+                date : mom.toDate(),
+                value : 180*obj.pos.altitude/Math.PI,
+                time : mom.format('LT'),
+                values : [Math.min(180*obj.pos.altitude/Math.PI, 0), Math.max(180*obj.pos.altitude/Math.PI, 0)]
+            };
+            data[2].data[p] = {
+                date : mom.toDate(),
+                value : obj.lux,
+                time : mom.format('LT'),
+                values : [Math.min(obj.lux, 0), Math.max(obj.lux, 0)]
+            };            
+            offset += 1;
             p++;
 
             const e = this.fetchEventAt(when);
