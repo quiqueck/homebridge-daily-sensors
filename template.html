@@ -21,6 +21,10 @@
                 font-size: 75%;
             }
 
+            .focus rect {
+                fill: rgba(255, 255, 255, 0.5);
+            }
+
             .focus line {
                 stroke: rgba(70, 131, 180, 0.4);
             }
@@ -46,6 +50,13 @@
         <table class="table table-hover thead-dark">{{TABLE}}</table>
     </body>
     <script >
+        function updateWindow(){
+            x = window.innerWidth;
+            y = window.innerHeight;
+
+            svg.attr("width", x).attr("height", x/2);
+        }        
+        
         function remap(data){
             var result = [];
             for (const value of data) {
@@ -64,10 +75,12 @@
         const data = {{DATA}};
         const flat = remap(data);
         
-        const svg = d3.select('svg'),
-              width = +svg.attr("width"),
+        const svg = d3.select('svg');
+        updateWindow();
+
+        const width = +svg.attr("width"),
               height = +svg.attr("height"),
-              margin = ({top: 0, right: 20, bottom: 30, left: 20});        
+              margin = ({top: 0, right: 100, bottom: 30, left: 20});        
          
         var x = d3.scaleTime()
             .domain(d3.extent(flat, d => d.date))
@@ -147,6 +160,20 @@
         svg.append("g")
             .attr("class", "y1axis")
             .call(y1Axis);
+
+
+        var focusLux = svg.append("g")
+            .attr("class", "focusLux")
+            .style("display", "none");
+
+        focusLux.append("line")
+            .attr("x1", 0)
+            .attr("x2", width+'px')
+            .attr("y1", 0)
+            .attr("y2", 0);
+
+        focusLux.append("circle")
+            .attr("r", 4.5);
         
         var focus = svg.append("g")
             .attr("class", "focus")
@@ -164,6 +191,12 @@
             .attr("y1", 0)
             .attr("y2", 0);
 
+        focus.append('rect')
+            .attr("width", margin.right)
+            .attr("height", '4em')            
+            .attr('x', '2px')
+            .attr('y', '-0.7em');
+
         focus.append("circle")
             .attr("r", 4.5);
 
@@ -172,18 +205,6 @@
             .attr("dy", ".35em");
 
 
-        var focusLux = svg.append("g")
-            .attr("class", "focusLux")
-            .style("display", "none");
-
-        focusLux.append("line")
-            .attr("x1", 0)
-            .attr("x2", width+'px')
-            .attr("y1", 0)
-            .attr("y2", 0);
-
-        focusLux.append("circle")
-            .attr("r", 4.5);
 
         svg.append("rect")
             .attr("class", "overlay")
@@ -202,7 +223,7 @@
                 dLux = data[2].data[i],
                 iAct = bisectDate(data[0].data, x0, 1),
                 dAct = data[0].data[i];
-            
+            if (d===undefined || dLux===undefined || dAct===undefined) return;
             focus.attr("transform", "translate(" + x(d.date) + "," + y(d.normalizedValue) + ")");
             focusLux.attr("transform", "translate(" + x(dLux.date) + "," + y(dLux.normalizedValue) + ")");
 
