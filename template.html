@@ -17,7 +17,7 @@
                 pointer-events: all;                
             }
 
-            .focus text, .focusLux text {
+            .focus text, .focusLux text, .focusEvent text {
                 font-size: 75%;
             }
 
@@ -29,10 +29,6 @@
                 stroke: rgba(70, 131, 180, 0.4);
             }
 
-            .focusLux line {
-                stroke: rgba(180, 127, 70, 0.4);
-            }
-
             .focus circle {
                 fill: white;
                 stroke: steelblue;
@@ -41,6 +37,19 @@
             .focusLux circle {
                 fill: white;
                 stroke: rgb(180, 127, 70);
+            }
+
+            .focusLux line {
+                stroke: rgba(180, 127, 70, 0.4);
+            }
+
+            .focusEvent circle {
+                fill: rgb(255, 255, 140);
+                stroke: gray;
+            }
+
+            .focusEvent line {
+                stroke: rgba(128, 128, 128, 0.4);
             }
         </style>
     </head>
@@ -73,6 +82,7 @@
         }
 
         const data = {{DATA}};
+        const events = {{EVENT_DATA}};
         const flat = remap(data);
         
         const svg = d3.select('svg');
@@ -149,6 +159,21 @@
             .append("title")
                 .text(([name]) => name);
 
+        // draw dots
+        svg.append("g")
+            .selectAll("path.events")
+            .data(events.data)
+                .attr("class", "events")
+            .enter().append("circle")
+                .attr("class", "dot")
+                .attr("r", 5)
+                .attr("cx", d => x(new Date(d.date)))
+                .attr("cy", d => y(d.value))
+                .attr("fill", 'rgba(255, 255, 255, 0.5)')
+                .attr("stroke", 'gray')
+            .append("title")
+                .text(d => {console.log(d); return d.name});
+
         svg.append("g")
             .attr("class", "xaxis")
             .call(xAxis);
@@ -161,6 +186,18 @@
             .attr("class", "y1axis")
             .call(y1Axis);
 
+        var focusEvent = svg.append("g")
+            .attr("class", "focusEvent")
+            .style("display", "none");
+
+        focusEvent.append("line")
+            .attr("x1", 0)
+            .attr("x2", 0)
+            .attr("y1", 0)
+            .attr("y2", height);
+
+        focusEvent.append("circle")
+            .attr("r", 5.5);
 
         var focusLux = svg.append("g")
             .attr("class", "focusLux")
@@ -192,8 +229,8 @@
             .attr("y2", 0);
 
         focus.append('rect')
-            .attr("width", margin.right)
-            .attr("height", '4em')            
+            .attr("width", margin.right * 1.35)
+            .attr("height", '4.8em')            
             .attr('x', '2px')
             .attr('y', '-0.7em');
 
@@ -205,34 +242,48 @@
             .attr("dy", ".35em");
 
 
-
         svg.append("rect")
             .attr("class", "overlay")
             .attr("width", width)
             .attr("height", height)
-            .on("mouseover", function() { focus.style("display", null); focusLux.style("display", null);})
-            .on("mouseout", function() { focus.style("display", "none"); focusLux.style("display", "none");})
+            .on("mouseover", function() { 
+                focus.style("display", null); 
+                focusLux.style("display", null); 
+                focusEvent.style("display", null);
+            })
+            .on("mouseout", function() { 
+                focus.style("display", "none"); 
+                focusLux.style("display", "none"); 
+                focusEvent.style("display", "none");
+            })
             .on("mousemove", mousemove);
 
         var bisectDate = d3.bisector(d => d.date).left;
+        var bisectNewDate = d3.bisector(d => new Date(d.date)).left;
         function mousemove() {            
             var x0 = x.invert(d3.mouse(this)[0]),
                 i = bisectDate(data[1].data, x0, 1),
                 d = data[1].data[i],
                 iLux = bisectDate(data[2].data, x0, 1),
-                dLux = data[2].data[i],
+                dLux = data[2].data[iLux],
                 iAct = bisectDate(data[0].data, x0, 1),
-                dAct = data[0].data[i];
+                dAct = data[0].data[iAct],
+                iEvent = bisectNewDate(events.data, x0, 1)-1,
+                dEvent = events.data[iEvent];
+
             if (d===undefined || dLux===undefined || dAct===undefined) return;
+            
             focus.attr("transform", "translate(" + x(d.date) + "," + y(d.normalizedValue) + ")");
             focusLux.attr("transform", "translate(" + x(dLux.date) + "," + y(dLux.normalizedValue) + ")");
+            focusEvent.attr("transform", "translate(" + x(new Date(dEvent.date)) + "," + y(dEvent.value) + ")");
 
             focus.select("text").html('');
             focus.select("text")
                 .append('tspan').attr('x', 6).attr('y', '0em').text(d.time)
                 .append('tspan').attr('x', 6).attr('y', '1.8em').text('Active: ' + (dAct.value==0 ? 'no' : 'yes'))
                 .append('tspan').attr('x', 6).attr('y', '2.8em').text('Altitude: ' + (Math.round(d.value * 100)/100) + '°')
-                .append('tspan').attr('x', 6).attr('y', '3.8em').text('Lux: ' + Math.round(dLux.value));
+                .append('tspan').attr('x', 6).attr('y', '3.8em').text('Lux: ' + Math.round(dLux.value))
+                .append('tspan').attr('x', 6).attr('y', '4.8em').text('Event: ' + dEvent.name);
         }
     </script>
 </html>

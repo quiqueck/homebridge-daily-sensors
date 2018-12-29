@@ -412,6 +412,44 @@ class DaylightSensors {
         setTimeout(this.updateState.bind(this, undefined), this.timeout);
     }
 
+    testTrigger(trigger, when, obj, result, silent) {
+        const self = this;
+
+        function changeByTrigger(trigger, what){
+            if (what && (trigger.when == TriggerWhen.greater || trigger.when == TriggerWhen.both)) {
+                if (!silent) obj.conditions.push({trigger:trigger, active:trigger.active});
+                result = trigger.active;
+                if (!silent) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
+            } else if (!what && (trigger.when == TriggerWhen.less || trigger.when == TriggerWhen.both)) {
+                if (!silent) obj.conditions.push({trigger:trigger, active:!trigger.active});
+                result = !trigger.active;
+                if (!silent) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
+            }
+        } 
+
+        switch(trigger.type) {
+            case TriggerTypes.time:                    
+                changeByTrigger(trigger, justTime(when) > justTime(trigger.value));
+            break;
+            case TriggerTypes.event:
+                const event = this.fetchEventAt(when);
+                if (event) {
+                    changeByTrigger(trigger, EventTypes[event.event] == trigger.value);
+                }
+            break;
+            case TriggerTypes.altitude:
+                changeByTrigger(trigger, obj.pos.altitude > trigger.value );
+            break;
+            case TriggerTypes.lux:
+                changeByTrigger(trigger, obj.lux > trigger.value );
+            break;
+            default:
+
+        }
+
+        return result;
+    }
+
     testIfActive(when) {
         const pos = this.posForTime(when);
         const newLux = this.luxForTime(when, pos);
@@ -425,40 +463,7 @@ class DaylightSensors {
         const self = this;
         let result = this.config.dayStartsActive ? this.config.dayStartsActive : false;               
         this.log("Starting day with result   -- " + result);    
-
-        function changeByTrigger(trigger, what){
-            if (what && (trigger.when == TriggerWhen.greater || trigger.when == TriggerWhen.both)) {
-                obj.conditions.push({trigger:trigger, active:trigger.active});
-                result = trigger.active;
-                self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
-            } else if (!what && (trigger.when == TriggerWhen.less || trigger.when == TriggerWhen.both)) {
-                obj.conditions.push({trigger:trigger, active:!trigger.active});
-                result = !trigger.active;
-                self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
-            }
-        }                                
-        
-        this.triggers.forEach(trigger => {
-            switch(trigger.type) {
-                case TriggerTypes.time:                    
-                    changeByTrigger(trigger, justTime(when) > justTime(trigger.value));
-                break;
-                case TriggerTypes.event:
-                    const event = this.fetchEventAt(when);
-                    if (event) {
-                        changeByTrigger(trigger, EventTypes[event.event] == trigger.value);
-                    }
-                break;
-                case TriggerTypes.altitude:
-                    changeByTrigger(trigger, pos.altitude > trigger.value );
-                break;
-                case TriggerTypes.lux:
-                    changeByTrigger(trigger, newLux > trigger.value );
-                break;
-                default:
-
-            }
-        })
+        this.triggers.forEach(trigger => result = self.testTrigger(trigger, when, obj, result, false));
 
         obj.active = result;
         return obj;
@@ -528,19 +533,42 @@ class DaylightSensors {
 
     buildInfoHTML(){
         const start = moment({h: 0, m: 0, s: 1})
+
+        const minutes = 5;
         let offset = 0;
         let p = 0;
+        let conditionData = [];
+        this.triggers.forEach(trigger => {
+            console.log(trigger);
+        });
         let data = [
             {data:[], min:-1, max:+1, name:'active', blocky:true},
             {data:[], min:-90, max:90, name:'altitude', blocky:false},
             {data:[], min:0, max:100000, name:'lux', blocky:false}];
 
-        let tableHTML = '';        
+        let eventList = {data:[]};        
+        this.events.forEach(event => {
+            eventList.data.push({
+                date:event.when,
+                name:triggerEventName(EventTypes[event.event]),
+                value:(180*event.pos.altitude/Math.PI) / 90
+            });
+        });
+                                                        
+
+        let tableHTML = '';  
+        const self = this;      
         while (offset < 60*24) {
-            const mom = start.add(1, 'minutes');            
+            const mom = start.add(minutes, 'minutes');            
             const when = mom.toDate();
             const obj = this.testIfActive(when);
             console.log(when, obj.active);
+
+
+            this.triggers.forEach(trigger => {
+                var result = undefined;
+                result = self.testTrigger(trigger, when, obj, result, true)
+            });
 
             data[0].data[p] = {
                 date : mom.toDate(),
@@ -560,7 +588,7 @@ class DaylightSensors {
                 time : mom.format('LT'),
                 values : [Math.min(obj.lux, 0), Math.max(obj.lux, 0)]
             };            
-            offset += 1;
+            offset += minutes;
             p++;
 
             const e = this.fetchEventAt(when);
@@ -581,6 +609,7 @@ class DaylightSensors {
 
         s = s.replace('\{\{DATA\}\}', JSON.stringify(data));
         s = s.replace('\{\{TABLE\}\}', tableHTML);
+        s = s.replace('\{\{EVENT_DATA\}\}', JSON.stringify(eventList));
         return s;
     }
 }
