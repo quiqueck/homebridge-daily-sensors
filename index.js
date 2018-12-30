@@ -351,7 +351,7 @@ class DaylightSensors {
         if (pos === undefined) {
             pos = this.posForTime(when);
         }
-        const minRad = (-12.0 / 180) * Math.PI;
+        const minRad = (-9.0 / 180) * Math.PI;
         var alt = pos.altitude;
         if (alt < minRad) return 0;
 
@@ -360,7 +360,7 @@ class DaylightSensors {
         alt *= Math.PI/2;
         
 
-        console.log(pos.altitude- alt, minRad, Math.sin(alt) * 100000);
+        //console.log(pos.altitude- alt, minRad, Math.sin(alt) * 100000);
         return Math.sin(alt) * 100000;
     }
 
