@@ -162,7 +162,7 @@ class DaylightSensors {
 
         this.parseTrigger(config.trigger);
 
-        this.log("loading Events");
+        if (this.debug) this.log("loading Events");
         //get the current event state as well as all future events
         let allEvents = this.eventsForDate(new Date(), false);
         this.events = [];
@@ -197,19 +197,19 @@ class DaylightSensors {
             }.bind(this));
         }
 
-        this.log("Updating Initial State");
+        this.log("Updating Initial State for " + this.config.name);
         this.updateState();
 
         if (this.config.port > 0) {
             const port = this.config.port;
-            console.log(`Starting HTTP listener on port ${port}...`);
+            if (this.debug) this.log(`Starting HTTP listener on port ${port}...`);
             var expressApp = express();
             expressApp.listen(port, (err) =>
             {
                 if (err) {
                     console.error(`Failed to start Express on port ${port}!`, err);
                 } else {
-                    this.log(`Express is running on port ${port}.`)
+                    if (this.debug) this.log(`Express is running on port ${port}.`)
                 }
             });
 
@@ -238,18 +238,17 @@ class DaylightSensors {
             expressApp.get("/css/bootstrap.min.css.map", (request, response) => {               
                 response.sendFile(path.join(__dirname, './css/bootstrap.min.css.map'));           
             });  
-            this.log("HTTP listener started.");
+            this.log("HTTP listener started on port " + port + ".");
         }
         
-        this.log("finished Initialization");
+        this.log("Finished Initialization");
     }
 
     getServices() { 
         const when = new Date();
         const pos = this.posForTime(when);
         const newLux = this.luxForTime(when, pos);
-        this.currentLux = Math.round(newLux);
-        console.log("INIT LUX", this.currentLux, when, pos, newLux);
+        this.currentLux = Math.round(newLux);        
 
         //Info about this plugin
         let informationService = new Service.AccessoryInformation ()
@@ -330,7 +329,7 @@ class DaylightSensors {
                 op:op
             });
         });
-        this.log(this.triggers);
+        if (this.debug) this.log(this.triggers);
     }
 
     //https://web.archive.org/web/20170819110438/http://www.domoticz.com:80/wiki/Real-time_solar_data_without_any_hardware_sensor_:_azimuth,_Altitude,_Lux_sensor...
@@ -412,9 +411,9 @@ class DaylightSensors {
         var e0 = this.eventsForDate(moment().add(-1, 'day').toDate(), false);
 
         this.events = e0.concat(e1).concat(e2);
-        console.log(moment(when).format('LTS'));
+        if (this.debug) this.log(moment(when).format('LTS'));
         this.events.forEach(event => {
-            console.log(moment(event.when).format('LTS'), event.event, formatRadians(event.pos.altitude), Math.round(event.lux));
+            if (this.debug) this.log(moment(event.when).format('LTS'), event.event, formatRadians(event.pos.altitude), Math.round(event.lux));
         });
     }
 
@@ -422,7 +421,7 @@ class DaylightSensors {
         const now = moment();
         const day = moment({h: 0, m: 0, s: 1});
         var days = this.activeDay ?  Math.abs(moment.duration(day.diff(this.activeDay)).asDays()) : 1;
-        console.log("Curent Event: ", this.fetchEventAt(now.toDate()), "days passed", days);
+        if (this.debug) this.log("Curent Event: ", this.fetchEventAt(now.toDate()), "days passed", days);
         if (days >= 0.98) {
             const when = now.toDate();
             this.activeDay = day;
@@ -458,11 +457,11 @@ class DaylightSensors {
             if (what && (trigger.when == TriggerWhen.greater || trigger.when == TriggerWhen.both)) {
                 if (!silent) obj.conditions.push({trigger:trigger, active:trigger.active});
                 concat(trigger.active);
-                if (!silent) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
+                if (!silent && self.debug) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
             } else if (!what && (trigger.when == TriggerWhen.less || trigger.when == TriggerWhen.both)) {
                 if (!silent) obj.conditions.push({trigger:trigger, active:!trigger.active});
                 concat(!trigger.active);
-                if (!silent) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
+                if (!silent && self.debug) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
             }
         } 
 
@@ -501,7 +500,7 @@ class DaylightSensors {
         
         const self = this;
         let result = this.config.dayStartsActive ? this.config.dayStartsActive : false;               
-        this.log("Starting day with result   -- " + result);    
+        if (this.debug) this.log("Starting day with result   -- " + result);    
         this.triggers.forEach(trigger => result = self.testTrigger(trigger, when, obj, result, false, false));
 
         obj.active = result;
@@ -519,8 +518,7 @@ class DaylightSensors {
         const self = this;               
         
         if (this.luxService && Math.abs(this.currentLux - newLux)>1){
-            this.currentLux = Math.round(newLux);
-            console.log("setCharacteristic", this.currentLux)
+            this.currentLux = Math.round(newLux);            
             this.luxService.setCharacteristic(
                 Characteristic.CurrentAmbientLightLevel,
                 this.currentLux
@@ -532,7 +530,7 @@ class DaylightSensors {
             this.syncSwitchState();
         }
 
-        this.log("    State at " + moment(when).format('LTS'), this.isActive, this.currentLux);
+        if (this.debug) this.log("    State at " + moment(when).format('LTS'), this.isActive, this.currentLux);
         this.queueNextEvent();
     }
 
@@ -612,7 +610,8 @@ class DaylightSensors {
             const mom = start.add(minutes, 'minutes');            
             const when = mom.toDate();
             const obj = this.testIfActive(when);
-            console.log(when, obj.active);
+            
+            if (this.debug) this.log(when, obj.active);
 
             conditionData[0].data[p] = {
                 date : mom.toDate(),

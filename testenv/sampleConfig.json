@@ -4,6 +4,7 @@
     "port":8081,
     "tickTimer":10000,
     "dayStartsActive":false,
+    "debug":true,
     "trigger":[        
         {
             "active":true,
