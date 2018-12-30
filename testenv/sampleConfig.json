@@ -19,7 +19,9 @@
         {
             "active":false,
             "type":"altitude",
-            "value":"0.03"
+            "value":"0.03",
+            "trigger":"both",
+            "op":"and"
         }
     ],
     "location":{

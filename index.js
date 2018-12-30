@@ -14,7 +14,7 @@ const constantSolarRadiation = 1361 //Solar Constant W/m²
 const arbitraryTwilightLux = 6.32     // W/m² egal 800 Lux
 const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4});
 const TriggerWhen = Object.freeze({"greater":1, "less":-1, "both":0});
-const TriggerOps = Object.freeze({"set":0, "and":1, "or":2});
+const TriggerOps = Object.freeze({"set":0, "and":1, "or":2, 'discard':3});
 const EventTypes = Object.freeze({"nightEnd":1, "nauticalDawn":2, "dawn":3, "sunrise":4, "sunriseEnd":5, "goldenHourEnd":6, "solarNoon":7, "goldenHour":8, "sunsetStart":9, "sunset":10, "dusk":11, "nauticalDusk":12, "night":13, "nadir":14});
 
 
@@ -26,7 +26,9 @@ function triggerOpsName(type){
         case TriggerOps.and:
             return '[AND]'; 
         case TriggerOps.or:
-            return '[OR]'; 
+            return '[OR]';  
+        case TriggerOps.discard:
+            return '[DROP]'; 
         default:
         return '[?]';
     }
@@ -444,6 +446,8 @@ class DaylightSensors {
                     break;
                 case TriggerOps.or:
                     result = result || r;
+                    break;
+                case TriggerOps.discard:
                     break;
                 default:
                     result = r;
