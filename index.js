@@ -347,8 +347,25 @@ class DaylightSensors {
         if (this.debug) this.log(this.triggers);
     }
 
-    //https://web.archive.org/web/20170819110438/http://www.domoticz.com:80/wiki/Real-time_solar_data_without_any_hardware_sensor_:_azimuth,_Altitude,_Lux_sensor...
     luxForTime(when, pos){
+        if (pos === undefined) {
+            pos = this.posForTime(when);
+        }
+        const minRad = (-12.0 / 180) * Math.PI;
+        var alt = pos.altitude;
+        if (alt < minRad) return 0;
+
+        alt -= minRad;
+        alt /= (Math.PI/2 - minRad);
+        alt *= Math.PI/2;
+        
+
+        console.log(pos.altitude- alt, minRad, Math.sin(alt) * 100000);
+        return Math.sin(alt) * 100000;
+    }
+
+    //https://web.archive.org/web/20170819110438/http://www.domoticz.com:80/wiki/Real-time_solar_data_without_any_hardware_sensor_:_azimuth,_Altitude,_Lux_sensor...
+    luxForTime2(when, pos){
         const numOfDay = moment(when).dayOfYear();
         const nbDaysInYear = 365;
         const RadiationAtm = constantSolarRadiation * (1 +0.034 * Math.cos((Math.PI / 180) * numOfDay / nbDaysInYear ));    // Sun radiation  (in W/m²) in the entrance of atmosphere.
@@ -555,7 +572,7 @@ class DaylightSensors {
             Characteristic.On,
             this.getIsActive()
         );
-        
+
         this.switchService
             .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
             .setValue(this.getIsActive() ? Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS : Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
