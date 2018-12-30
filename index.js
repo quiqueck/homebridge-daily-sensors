@@ -69,29 +69,41 @@ function triggerEventName(type){
     }
 }
 
-function triggerTypeName(type){
+function triggerTypeName(type, withOp){
+    if (withOp === undefined) withOp = false;
+    var ret = ''
     switch(type){
         case TriggerTypes.event:
-            return 'EVENT'; 
+            ret = 'EVENT'; 
+            if (withOp) ret += ' =';
+            break;
         case TriggerTypes.time:
-            return 'Time'; 
+            ret = 'Time'; 
+            if (withOp) ret += ' >';
+            break;
         case TriggerTypes.altitude:
-            return 'Altitude'; 
+            ret = 'Altitude'; 
+            if (withOp) ret += ' Y>';
+            break;
         case TriggerTypes.lux:
-            return 'Lux'; 
+            ret = 'Lux'; 
+            if (withOp) ret += ' >';
+            break;
         default:
-        return 'UNKNOWN';
+            ret = 'UNKNOWN';
     }
+    
+    return ret;
 }
 
 function triggerWhenName(type){
     switch(type){
         case TriggerWhen.greater:
-            return '>'; 
+            return 'Trigger If'; 
         case TriggerWhen.less:
-            return '<'; 
+            return 'Trigger If Not'; 
         case TriggerWhen.both:
-            return '< or >';         
+            return '';         
         default:
         return '?';
     }
@@ -487,12 +499,13 @@ class DaylightSensors {
 
         function changeByTrigger(trigger, what){
             if (what && (trigger.when == TriggerWhen.greater || trigger.when == TriggerWhen.both)) {
-                if (!silent) obj.conditions.push({trigger:trigger, active:trigger.active});
+                
                 concat(trigger.active);
+                if (!silent) obj.conditions.push({trigger:trigger, active:trigger.active, result:result});
                 if (!silent && self.debug) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
             } else if (!what && (trigger.when == TriggerWhen.less || trigger.when == TriggerWhen.both)) {
-                if (!silent) obj.conditions.push({trigger:trigger, active:!trigger.active});
                 concat(!trigger.active);
+                if (!silent) obj.conditions.push({trigger:trigger, active:!trigger.active, result:result});    
                 if (!silent && self.debug) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
             }
         } 
@@ -581,8 +594,9 @@ class DaylightSensors {
     formatTrigger(trigger){
         let s = ''
         s += triggerOpsName(trigger.op) + ' '
-        s = (s + triggerTypeName(trigger.type)).trim() + ' ';
-        s += triggerWhenName(trigger.when) + ' ';
+        s = (s + triggerWhenName(trigger.when)).trim() + ' ';
+        s = (s + triggerTypeName(trigger.type, true)).trim() + ' ';
+        
         switch(trigger.type){
             case TriggerTypes.time:
                 s += moment(trigger.value).format("LTS");
@@ -604,6 +618,13 @@ class DaylightSensors {
     }
 
     buildInfoHTML(){
+        function formatState(state, bold){
+            if (bold===undefined) bold=true;
+            let s = '<'+(bold?'b':'span')+' style="color:'+(state?'green':'red')+'">';
+            s += (state?'ON':'OFF');
+            s += '</'+(bold?'b':'span')+'>';
+            return s;
+        }
         const start = moment({h: 0, m: 0, s: 1})
 
         const minutes = 1;
@@ -640,6 +661,7 @@ class DaylightSensors {
         let tableHTML = '';  
         const self = this; 
         const dayStart =  this.config.dayStartsActive ? this.config.dayStartsActive : false;     
+
         while (offset < 60*24) {
             const mom = start.add(minutes, 'minutes');            
             const when = mom.toDate();
@@ -655,7 +677,7 @@ class DaylightSensors {
                 date : mom.toDate(),
                 value : dayStart
             };  
-            var all = dayStart; 
+            var all = dayStart;             
             this.triggers.forEach(trigger => {
                 var item = conditionData[2*trigger.id];
                 var itemAll = conditionData[2*trigger.id+1];
@@ -697,20 +719,41 @@ class DaylightSensors {
 
             const e = this.fetchEventAt(when);
             const et = triggerEventName(e ? EventTypes[e.event] : -1);
-            tableHTML += '<tr><th colspan="3">';
+            tableHTML += '<thead class="thead-dark"><tr><th colspan="4">';
             tableHTML += mom.format('LT')+', ';
             tableHTML += formatRadians(obj.pos.altitude)+', ';
             tableHTML += Math.round(obj.lux) +', ';
-            tableHTML += et + '</th></tr>';
+            tableHTML += et + '</th></tr></thead>';
+            tableHTML += '<tr><td></td><td>Daystart</td><td style="width:1px"> =&gt; </td><td style="width:1px;">'+formatState(dayStart)+'</td></tr>';;
+
+            var last = dayStart;
             obj.conditions.forEach(val => {
                 tableHTML += '<tr><td></td><td>';
                 tableHTML += this.formatTrigger(val.trigger);
-                tableHTML +='</td><td> =&gt; '+(val.active?'ON':'OFF')+'</td></tr>';
+                tableHTML += '</td><td style="width:1px;white-space: nowrap;"> =&gt; ';
+                switch (val.trigger.op) {
+                    case TriggerOps.and:
+                        tableHTML +=  formatState(last, false) + ' and ' + formatState(val.active, false) + ' = '
+                        break;
+                    case TriggerOps.or:
+                        tableHTML +=  formatState(last, false) + ' or ' + formatState(val.active, false) + ' = '
+                        break;
+                    
+                    case TriggerOps.discard:
+                        tableHTML +=  '[IGNORE]' ;
+                        break;
+                    default:
+                    tableHTML +=  '';
+                }
+                tableHTML += '</td><td style="width:1px;white-space: nowrap;">'+formatState(val.result, val.trigger.op!=TriggerOps.discard)+'</td></tr>';
+                last = val.result;
             })
+            
         }
         
         let s = fs.readFileSync(path.join(__dirname, './template.html'), { encoding: 'utf8' });
 
+        s = s.replace('\{\{NAME\}\}', this.config.name);
         s = s.replace('\{\{DATA\}\}', JSON.stringify(data));
         s = s.replace('\{\{TABLE\}\}', tableHTML);
         s = s.replace('\{\{EVENT_DATA\}\}', JSON.stringify(eventList));

@@ -6,12 +6,23 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Tageszeit Info</title>
+        <title>{{NAME}} Info</title>
         
         <link rel="stylesheet" href="css/bootstrap.min.css">
         <script src="js/d3.js"></script>
 
         <style>
+            table {
+                width : 500px !important;
+            }
+             th {
+                padding-top:4px !important;
+                padding-bottom:4px !important;
+            }
+            tr, td {
+                padding-top:0px !important;
+                padding-bottom:0px !important;
+            }
             .overlay {
                 fill: none;
                 pointer-events: all;                
@@ -57,7 +68,7 @@
     <body>
         <svg width="800" height="500" id="main"></svg>
         <svg width="800" height="200" id="trigger"></svg>
-        <table class="table table-hover thead-dark">{{TABLE}}</table>
+        <table class="table table-hover thead-dark" style="font-size:60%">{{TABLE}}</table>
     </body>
     <script >
         
