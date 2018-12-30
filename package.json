@@ -1,6 +1,6 @@
 {
   "name": "homebridge-daylight-sensors",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Daylight Sensor Plugin for Homebridge that provides a list of predefined (and customizable) sensors that trigger at certain sun positions.",
   "main": "index.js",
   "dependencies": {
