@@ -153,6 +153,7 @@ class DaylightSensors {
         const self = this;
         
         this.log = log;
+        this.override = undefined;
         this.debug = config.debug || false;
         this.config = config;
         this.isActive = false;
@@ -215,16 +216,26 @@ class DaylightSensors {
 
             
             expressApp.get("/0", (request, response) => {
-                this.isActive = true;
+                this.override = false;
                 this.syncSwitchState();           
-                response.send('Switch triggered 0.');
-                console.log("ON");
+                response.send('Switch forced to trigger OFF.\n');
+                if (this.debug) this.log("received OFF");
             });
             expressApp.get("/1", (request, response) => {
-                this.isActive = false;
+                this.override = true;
                 this.syncSwitchState();          
-                response.send('Switch triggered 1.');
-                console.log("OFF");
+                response.send('Switch forced to trigger ON.\n');
+                if (this.debug) this.log("received ON");
+            });
+            expressApp.get("/clear", (request, response) => {
+                this.override = undefined;
+                this.syncSwitchState();          
+                response.send('Switch operation normal.\n');
+                if (this.debug) this.log("received CLEAR");
+            });
+            expressApp.get("/state", (request, response) => {
+                response.send('Switch is ' + (this.getIsActive()?'ON':'OFF') + '\nOverride is ' + (this.override===undefined?'INACTIVE':'ACTIVE') + '\n');
+                if (this.debug) this.log("received STATE");
             });
             expressApp.get("/", (request, response) => {               
                 response.send(this.buildInfoHTML());               
@@ -242,6 +253,10 @@ class DaylightSensors {
         }
         
         this.log("Finished Initialization");
+    }
+
+    getIsActive() {
+        return (this.override!==undefined) ? this.override : this.isActive;
     }
 
     getServices() { 
@@ -270,7 +285,7 @@ class DaylightSensors {
 
         this.switchService
             .getCharacteristic(Characteristic.On)
-            .on('get', callback => callback(null, self.isActive));
+            .on('get', callback => callback(null, self.getIsActive()));
 
         this.switchService
             .getCharacteristic(Characteristic.On)
@@ -526,6 +541,7 @@ class DaylightSensors {
         }    
         
         if (this.isActive != result) {
+            this.override = undefined;
             this.isActive = result;
             this.syncSwitchState();
         }
@@ -537,11 +553,12 @@ class DaylightSensors {
     syncSwitchState(){
         this.switchService.setCharacteristic(
             Characteristic.On,
-            this.isActive
+            this.getIsActive()
         );
+        
         this.switchService
-                .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
-                .setValue(this.isActive  ? Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS : Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS)
+            .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+            .setValue(this.getIsActive() ? Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS : Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
     }
 
     formatTrigger(trigger){
@@ -671,7 +688,7 @@ class DaylightSensors {
             obj.conditions.forEach(val => {
                 tableHTML += '<tr><td></td><td>';
                 tableHTML += this.formatTrigger(val.trigger);
-                tableHTML +='</td><td> =&gt; '+(val.active?'yes':'no')+'</td></tr>';
+                tableHTML +='</td><td> =&gt; '+(val.active?'ON':'OFF')+'</td></tr>';
             })
         }
         
