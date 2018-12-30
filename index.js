@@ -574,7 +574,7 @@ class DaylightSensors {
     buildInfoHTML(){
         const start = moment({h: 0, m: 0, s: 1})
 
-        const minutes = 5;
+        const minutes = 1;
         let offset = 0;
         let p = 0;
 
@@ -586,7 +586,7 @@ class DaylightSensors {
             }
             conditionData[2*trigger.id+1] = {
                 data:[],
-                name:this.formatTrigger(trigger)
+                name:"Result after " + this.formatTrigger(trigger)
             }
         });
 

@@ -55,15 +55,24 @@
     </head>
 
     <body>
-        <svg width="800" height="500"></svg>
+        <svg width="800" height="500" id="main"></svg>
+        <svg width="800" height="200" id="trigger"></svg>
         <table class="table table-hover thead-dark">{{TABLE}}</table>
     </body>
     <script >
+        
+        const heightSingleCondition = 4;
+        const heightSeperatorCondition = 0.3;
+        const heightAllCondition = 3;
+        const heightSpacerCondition = 3;
+        const heightPerCondition = heightSingleCondition+heightSeperatorCondition+heightAllCondition+heightSpacerCondition;
+        const pixelPerCondition = heightPerCondition*3;
         function updateWindow(){
             x = window.innerWidth;
             y = window.innerHeight;
 
             svg.attr("width", x).attr("height", x/2);
+            svgT.attr("width", x).attr("height", conditions.length/2 * pixelPerCondition);
         }        
         
         function remap(data, conditions){
@@ -86,18 +95,18 @@
                     entry.date = new Date(entry.date);                    
                     entry.last = was;
                     
-                    const off = ((p-p%2)/2)*0.05;
+                    const off = -((p-p%2)/2);
                     if (p%2==0){
                         if (entry.value === undefined) {                        
-                            entry.normalized = [1 - off, 1 - off];                        
+                            entry.normalized = [off*heightPerCondition, off*heightPerCondition];                        
                         } else {
-                            entry.normalized = [0.9725 - off, 1 - off];
+                            entry.normalized = [off*heightPerCondition, off*heightPerCondition - heightSingleCondition];
                         }  
                     } else {
                         if (entry.value === undefined) {                        
-                            entry.normalized = [0.97 - off, 0.97 - off];                        
+                            entry.normalized = [off*heightPerCondition, off*heightPerCondition];                        
                         } else {
-                            entry.normalized = [0.96 - off, 0.97 - off];
+                            entry.normalized = [off*heightPerCondition - (heightSingleCondition + heightSeperatorCondition),off*heightPerCondition - (heightAllCondition + heightSingleCondition + heightSeperatorCondition)];
                         }
                     }
                     was = entry.value;                                          
@@ -113,7 +122,8 @@
         const flat = remap(data, conditions);
         console.log(conditions);
         
-        const svg = d3.select('svg');
+        const svg = d3.select('svg#main');
+        const svgT = d3.select('svg#trigger');
         updateWindow();
 
         const width = +svg.attr("width"),
@@ -130,6 +140,10 @@
                 d3.max(flat, d => d.normalized[1] )
             ])
             .range([height - margin.bottom, margin.top])
+
+        var yT = d3.scaleLinear()
+            .domain([-conditions.length/2 * heightPerCondition, 0])
+            .range([conditions.length/2 * pixelPerCondition - margin.bottom, margin.top])
 
         var y0 = d3.scaleLinear()
             .domain([
@@ -174,14 +188,14 @@
         areaFalse = d3.area()
             .curve(d3.curveStepAfter)
             .x(d => x(d.date))
-            .y0(d => y(d.value == undefined || d.value ? 0 : d.normalized[0]))
-            .y1(d => y(d.value == undefined || d.value ? 0 : d.normalized[1]))
+            .y0(d => yT(d.value == undefined || d.value ? 0 : d.normalized[0]))
+            .y1(d => yT(d.value == undefined || d.value ? 0 : d.normalized[1]))
 
         areaTrue = d3.area()
             .curve(d3.curveStepAfter)
             .x(d => x(d.date))
-            .y0(d => y(d.value == undefined || !d.value ? 0 : d.normalized[0]))
-            .y1(d => y(d.value == undefined || !d.value ? 0 : d.normalized[1]))
+            .y0(d => yT(d.value == undefined || !d.value ? 0 : d.normalized[0]))
+            .y1(d => yT(d.value == undefined || !d.value ? 0 : d.normalized[1]))
 
         area = d3.area()
             .curve(d3.curveCatmullRom)
@@ -279,28 +293,11 @@
 
         focus.append("text")
             .attr("x", 9)
-            .attr("dy", ".35em");
-
-
-        svg.append("rect")
-            .attr("class", "overlay")
-            .attr("width", width)
-            .attr("height", height)
-            .on("mouseover", function() { 
-                focus.style("display", null); 
-                focusLux.style("display", null); 
-                focusEvent.style("display", null);
-            })
-            .on("mouseout", function() { 
-                focus.style("display", "none"); 
-                focusLux.style("display", "none"); 
-                focusEvent.style("display", "none");
-            })
-            .on("mousemove", mousemove);
+            .attr("dy", ".35em");       
 
         
 
-        svg.append("g")
+        svgT.append("g")
             .selectAll("path.area")            
             .data(conditions.map(d => [d.name, d.data.filter(dd => (dd.value===true || dd.last===true))]))
                 .attr("class", "area")
@@ -310,7 +307,7 @@
             .append("title")
                 .text(([name]) => name);
 
-        svg.append("g")
+        svgT.append("g")
             .selectAll("path.area")            
             .data(conditions.map(d => [d.name, d.data.filter(dd => (dd.value===false || dd.last===false))]))
                 .attr("class", "area")
@@ -319,6 +316,34 @@
                 .attr("d", ([, values]) => areaFalse(values))
             .append("title")
                 .text(([name]) => name);
+
+        var focusT = svgT.append("g")
+            .attr("class", "focus")
+            .style("display", "none");
+
+        focusT.append("line")
+            .attr("x1", 0)
+            .attr("x2", 0)
+            .attr("y1", -20000)
+            .attr("y2", 20000);
+
+        svg.append("rect")
+            .attr("class", "overlay")
+            .attr("width", width)
+            .attr("height", height)
+            .on("mouseover", function() { 
+                focus.style("display", null); 
+                focusLux.style("display", null); 
+                focusEvent.style("display", null);
+                focusT.style("display", null);
+            })
+            .on("mouseout", function() { 
+                focus.style("display", "none"); 
+                focusLux.style("display", "none"); 
+                focusEvent.style("display", "none");
+                focusT.style("display", "none");
+            })
+            .on("mousemove", mousemove);
 
         var bisectDate = d3.bisector(d => d.date).left;
         var bisectNewDate = d3.bisector(d => new Date(d.date)).left;
@@ -338,6 +363,7 @@
             focus.attr("transform", "translate(" + x(d.date) + "," + y(d.normalizedValue) + ")");
             focusLux.attr("transform", "translate(" + x(dLux.date) + "," + y(dLux.normalizedValue) + ")");
             focusEvent.attr("transform", "translate(" + x(new Date(dEvent.date)) + "," + y(dEvent.value) + ")");
+            focusT.attr("transform", "translate(" + x(d.date) + "," + yT(0) + ")");
 
             focus.select("text").html('');
             focus.select("text")
