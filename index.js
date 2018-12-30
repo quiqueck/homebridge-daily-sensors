@@ -83,7 +83,7 @@ function triggerTypeName(type, withOp){
             break;
         case TriggerTypes.altitude:
             ret = 'Altitude'; 
-            if (withOp) ret += ' Y>';
+            if (withOp) ret += ' >';
             break;
         case TriggerTypes.lux:
             ret = 'Lux'; 
