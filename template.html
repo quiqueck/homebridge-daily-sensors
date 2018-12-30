@@ -66,7 +66,7 @@
             svg.attr("width", x).attr("height", x/2);
         }        
         
-        function remap(data){
+        function remap(data, conditions){
             var result = [];
             for (const value of data) {
                 const div = Math.max(0.001, Math.max(Math.abs(value.min), Math.abs(value.max)));
@@ -78,12 +78,40 @@
                     result.push(entry);
                 }
             }
+
+            let p = 0;
+            for (const value of conditions) {
+                var was = undefined;
+                for (const entry of value.data){
+                    entry.date = new Date(entry.date);                    
+                    entry.last = was;
+                    
+                    const off = ((p-p%2)/2)*0.05;
+                    if (p%2==0){
+                        if (entry.value === undefined) {                        
+                            entry.normalized = [1 - off, 1 - off];                        
+                        } else {
+                            entry.normalized = [0.9725 - off, 1 - off];
+                        }  
+                    } else {
+                        if (entry.value === undefined) {                        
+                            entry.normalized = [0.97 - off, 0.97 - off];                        
+                        } else {
+                            entry.normalized = [0.96 - off, 0.97 - off];
+                        }
+                    }
+                    was = entry.value;                                          
+                }
+                p++;
+            }
             return result;
         }
 
         const data = {{DATA}};
         const events = {{EVENT_DATA}};
-        const flat = remap(data);
+        const conditions = {{CONDITION_DATA}};
+        const flat = remap(data, conditions);
+        console.log(conditions);
         
         const svg = d3.select('svg');
         updateWindow();
@@ -143,6 +171,18 @@
             .y0(d => y(d.normalized[0]))
             .y1(d => y(d.normalized[1]))
 
+        areaFalse = d3.area()
+            .curve(d3.curveStepAfter)
+            .x(d => x(d.date))
+            .y0(d => y(d.value == undefined || d.value ? 0 : d.normalized[0]))
+            .y1(d => y(d.value == undefined || d.value ? 0 : d.normalized[1]))
+
+        areaTrue = d3.area()
+            .curve(d3.curveStepAfter)
+            .x(d => x(d.date))
+            .y0(d => y(d.value == undefined || !d.value ? 0 : d.normalized[0]))
+            .y1(d => y(d.value == undefined || !d.value ? 0 : d.normalized[1]))
+
         area = d3.area()
             .curve(d3.curveCatmullRom)
             .x(d => x(d.date))
@@ -172,7 +212,7 @@
                 .attr("fill", 'rgba(255, 255, 255, 0.5)')
                 .attr("stroke", 'gray')
             .append("title")
-                .text(d => {console.log(d); return d.name});
+                .text(d => d.name);
 
         svg.append("g")
             .attr("class", "xaxis")
@@ -257,6 +297,28 @@
                 focusEvent.style("display", "none");
             })
             .on("mousemove", mousemove);
+
+        
+
+        svg.append("g")
+            .selectAll("path.area")            
+            .data(conditions.map(d => [d.name, d.data.filter(dd => (dd.value===true || dd.last===true))]))
+                .attr("class", "area")
+            .enter().append("path")
+                .attr("fill", d => 'green')
+                .attr("d", ([, values]) => areaTrue(values))
+            .append("title")
+                .text(([name]) => name);
+
+        svg.append("g")
+            .selectAll("path.area")            
+            .data(conditions.map(d => [d.name, d.data.filter(dd => (dd.value===false || dd.last===false))]))
+                .attr("class", "area")
+            .enter().append("path")
+                .attr("fill", d => 'red')
+                .attr("d", ([, values]) => areaFalse(values))
+            .append("title")
+                .text(([name]) => name);
 
         var bisectDate = d3.bisector(d => d.date).left;
         var bisectNewDate = d3.bisector(d => new Date(d.date)).left;

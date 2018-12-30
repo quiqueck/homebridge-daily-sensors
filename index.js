@@ -14,7 +14,23 @@ const constantSolarRadiation = 1361 //Solar Constant W/m²
 const arbitraryTwilightLux = 6.32     // W/m² egal 800 Lux
 const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4});
 const TriggerWhen = Object.freeze({"greater":1, "less":-1, "both":0});
+const TriggerOps = Object.freeze({"set":0, "and":1, "or":2});
 const EventTypes = Object.freeze({"nightEnd":1, "nauticalDawn":2, "dawn":3, "sunrise":4, "sunriseEnd":5, "goldenHourEnd":6, "solarNoon":7, "goldenHour":8, "sunsetStart":9, "sunset":10, "dusk":11, "nauticalDusk":12, "night":13, "nadir":14});
+
+
+
+function triggerOpsName(type){
+    switch(type){
+        case TriggerOps.set:
+            return ''; 
+        case TriggerOps.and:
+            return '[AND]'; 
+        case TriggerOps.or:
+            return '[OR]'; 
+        default:
+        return '[?]';
+    }
+}
 
 function triggerEventName(type){
     switch(type){
@@ -282,6 +298,7 @@ class DaylightSensors {
         let ID = 0;
         trigger.forEach(val => {
             const type = TriggerTypes[val.type];
+            const op = val.op !== undefined ? TriggerOps[val.op] : TriggerOps.set;
             let value = '';
             ID++;
             switch(type){
@@ -307,7 +324,8 @@ class DaylightSensors {
                 active: val.active !== undefined ? val.active : true,
                 value: value,
                 id:ID,
-                when: TriggerWhen[val.trigger ? val.trigger : 'greater']
+                when: TriggerWhen[val.trigger ? val.trigger : 'greater'],
+                op:op
             });
         });
         this.log(this.triggers);
@@ -412,17 +430,34 @@ class DaylightSensors {
         setTimeout(this.updateState.bind(this, undefined), this.timeout);
     }
 
-    testTrigger(trigger, when, obj, result, silent) {
+    testTrigger(trigger, when, obj, result, single, silent) {
         const self = this;
+
+        function concat(r) {
+            if (single) {
+                result = r;
+                return;
+            }
+            switch(trigger.op){
+                case TriggerOps.and:
+                    result = result && r;
+                    break;
+                case TriggerOps.or:
+                    result = result || r;
+                    break;
+                default:
+                    result = r;
+            }
+        }
 
         function changeByTrigger(trigger, what){
             if (what && (trigger.when == TriggerWhen.greater || trigger.when == TriggerWhen.both)) {
                 if (!silent) obj.conditions.push({trigger:trigger, active:trigger.active});
-                result = trigger.active;
+                concat(trigger.active);
                 if (!silent) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
             } else if (!what && (trigger.when == TriggerWhen.less || trigger.when == TriggerWhen.both)) {
                 if (!silent) obj.conditions.push({trigger:trigger, active:!trigger.active});
-                result = !trigger.active;
+                concat(!trigger.active);
                 if (!silent) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
             }
         } 
@@ -463,7 +498,7 @@ class DaylightSensors {
         const self = this;
         let result = this.config.dayStartsActive ? this.config.dayStartsActive : false;               
         this.log("Starting day with result   -- " + result);    
-        this.triggers.forEach(trigger => result = self.testTrigger(trigger, when, obj, result, false));
+        this.triggers.forEach(trigger => result = self.testTrigger(trigger, when, obj, result, false, false));
 
         obj.active = result;
         return obj;
@@ -509,7 +544,8 @@ class DaylightSensors {
 
     formatTrigger(trigger){
         let s = ''
-        s += triggerTypeName(trigger.type) + ' ';
+        s += triggerOpsName(trigger.op) + ' '
+        s = (s + triggerTypeName(trigger.type)).trim() + ' ';
         s += triggerWhenName(trigger.when) + ' ';
         switch(trigger.type){
             case TriggerTypes.time:
@@ -537,10 +573,19 @@ class DaylightSensors {
         const minutes = 5;
         let offset = 0;
         let p = 0;
-        let conditionData = [];
+
+        let conditionData = [{data:[], name:'Daystart'}, {data:[], name:'Daystart'}];
         this.triggers.forEach(trigger => {
-            console.log(trigger);
+            conditionData[2*trigger.id] = {
+                data:[],
+                name:this.formatTrigger(trigger)
+            }
+            conditionData[2*trigger.id+1] = {
+                data:[],
+                name:this.formatTrigger(trigger)
+            }
         });
+
         let data = [
             {data:[], min:-1, max:+1, name:'active', blocky:true},
             {data:[], min:-90, max:90, name:'altitude', blocky:false},
@@ -557,17 +602,39 @@ class DaylightSensors {
                                                         
 
         let tableHTML = '';  
-        const self = this;      
+        const self = this; 
+        const dayStart =  this.config.dayStartsActive ? this.config.dayStartsActive : false;     
         while (offset < 60*24) {
             const mom = start.add(minutes, 'minutes');            
             const when = mom.toDate();
             const obj = this.testIfActive(when);
             console.log(when, obj.active);
 
-
+            conditionData[0].data[p] = {
+                date : mom.toDate(),
+                value : dayStart
+            }; 
+            conditionData[1].data[p] = {
+                date : mom.toDate(),
+                value : dayStart
+            };  
+            var all = dayStart; 
             this.triggers.forEach(trigger => {
-                var result = undefined;
-                result = self.testTrigger(trigger, when, obj, result, true)
+                var item = conditionData[2*trigger.id];
+                var itemAll = conditionData[2*trigger.id+1];
+
+                var one = undefined;
+                one = self.testTrigger(trigger, when, obj, one, true, true);
+                all = self.testTrigger(trigger, when, obj, all, false, true);
+                
+                item.data[p] = {
+                    date : mom.toDate(),
+                    value : one
+                };
+                itemAll.data[p] = {
+                    date : mom.toDate(),
+                    value : all
+                };                
             });
 
             data[0].data[p] = {
@@ -610,6 +677,7 @@ class DaylightSensors {
         s = s.replace('\{\{DATA\}\}', JSON.stringify(data));
         s = s.replace('\{\{TABLE\}\}', tableHTML);
         s = s.replace('\{\{EVENT_DATA\}\}', JSON.stringify(eventList));
+        s = s.replace('\{\{CONDITION_DATA\}\}', JSON.stringify(conditionData));
         return s;
     }
 }

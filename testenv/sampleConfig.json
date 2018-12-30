@@ -13,7 +13,8 @@
         {
             "active":false,
             "type":"time",
-            "value":"9:00 PM"
+            "value":"9:00 PM",
+            "trigger":"greater"
         },
         {
             "active":false,
