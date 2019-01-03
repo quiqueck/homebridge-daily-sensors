@@ -1,6 +1,6 @@
 {
-  "name": "homebridge-daylight-sensors",
-  "version": "0.0.2",
+  "name": "homebridge-daily-sensors",
+  "version": "0.0.3-alpha",
   "description": "Daylight Sensor Plugin for Homebridge that provides a list of predefined (and customizable) sensors that trigger at certain sun positions.",
   "main": "index.js",
   "dependencies": {
@@ -17,14 +17,16 @@
     "homebridge-plugin",
     "solar",
     "daylight",
-    "sensor"
+    "sensor",
+    "time",
+    "randomized"
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/quiqueck/homebridge-daylight-sensors"
+    "url": "git://github.com/quiqueck/homebridge-daily-sensors"
   },
   "bugs": {
-    "url": "http://github.com/quiqueck/homebridge-daylight-sensors/issues"
+    "url": "http://github.com/quiqueck/homebridge-daily-sensors/issues"
   },
   "engines": {
     "node": ">=9.0.0",

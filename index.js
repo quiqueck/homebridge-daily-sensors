@@ -138,7 +138,7 @@ module.exports = function(homebridge) {
     Characteristic = homebridge.hap.Characteristic;
     UUIDGen = homebridge.hap.uuid;
 
-    homebridge.registerAccessory("homebridge-daylight-sensors", "DaylightSensors", DaylightSensors);
+    homebridge.registerAccessory("homebridge-daily-sensors", "DailySensors", DailySensors);
 }
 
 function justTime(date){
@@ -154,7 +154,7 @@ function formatNumber(nr){
     return parseFloat(Math.round(nr * 100) / 100).toFixed(2)
 }
 
-class DaylightSensors {
+class DailySensors {
     constructor(log, config, api) {
         if (!config.location ||
             !Number.isFinite(config.location.latitude) ||

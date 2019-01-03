@@ -1,5 +1,5 @@
 {
-    "accessory": "DaylightSensors",
+    "accessory": "DailySensors",
     "name":"Tageszeit",
     "port":8081,
     "tickTimer":10000,
