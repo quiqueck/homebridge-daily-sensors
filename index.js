@@ -328,6 +328,7 @@ class DailySensors {
             const type = TriggerTypes[val.type];
             const op = val.op !== undefined ? TriggerOps[val.op] : TriggerOps.set;
             let value = '';
+            let random = val.random;
             ID++;
             switch(type){
                 case TriggerTypes.event:
@@ -338,6 +339,7 @@ class DailySensors {
                 break;
                 case TriggerTypes.altitude:
                     value = (val.value / 180.0) * Math.PI;
+                    random = (val.random / 180.0) * Math.PI;
                     //suncalc.addTime(val.value, ID+'_AM', ID+'_PM');
                 break;
                 case TriggerTypes.lux:
@@ -354,7 +356,7 @@ class DailySensors {
                 id:ID,
                 when: TriggerWhen[val.trigger ? val.trigger : 'greater'],
                 op:op,
-                random: val.random
+                random: random
             });
         });
         if (this.debug) this.log(this.triggers);
@@ -640,7 +642,7 @@ class DailySensors {
             case TriggerTypes.altitude:                
                 if (trigger.random && trigger.random!=0) {
                     s += formatRadians(trigger.randomizedValue);
-                    s+= ' (' +formatRadians(trigger.value)+ '±' + trigger.random + "°)";
+                    s+= ' (' +formatRadians(trigger.value)+ '±' + formatRadians(trigger.random) + ")";
                 } else {
                     s += formatRadians(trigger.value);
                 }
