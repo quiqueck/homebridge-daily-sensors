@@ -353,7 +353,8 @@ class DailySensors {
                 value: value,
                 id:ID,
                 when: TriggerWhen[val.trigger ? val.trigger : 'greater'],
-                op:op
+                op:op,
+                random: val.random
             });
         });
         if (this.debug) this.log(this.triggers);
@@ -459,6 +460,32 @@ class DailySensors {
         this.events.forEach(event => {
             if (this.debug) this.log(moment(event.when).format('LTS'), event.event, formatRadians(event.pos.altitude), Math.round(event.lux));
         });
+
+        this.triggers.forEach(trigger => {
+            let r = trigger.random ? trigger.random : 0;
+            if (r==0){
+                trigger.randomizedValue = trigger.value;
+                return;
+            }
+
+            let rnd = Math.random() * 2*r - r;
+            switch (trigger.type ) {
+                case TriggerTypes.lux:
+                case TriggerTypes.altitude:
+                    trigger.randomizedValue = trigger.value + rnd;
+                    break;
+                case TriggerTypes.time:
+                    let m = moment(trigger.value);
+                    m = m.add(rnd, 'minutes');
+                    trigger.randomizedValue = m.toDate();
+                    break;
+                default:
+                    trigger.randomizedValue = trigger.value
+            }
+            if (this.debug) {
+                this.log("generated", trigger.randomizedValue, "from", trigger.value, "+", trigger.random, rnd)
+            }
+        });
     }
 
     queueNextEvent() {
@@ -512,7 +539,7 @@ class DailySensors {
 
         switch(trigger.type) {
             case TriggerTypes.time:                    
-                changeByTrigger(trigger, justTime(when) > justTime(trigger.value));
+                changeByTrigger(trigger, justTime(when) > justTime(trigger.randomizedValue));
             break;
             case TriggerTypes.event:
                 const event = this.fetchEventAt(when);
@@ -521,10 +548,10 @@ class DailySensors {
                 }
             break;
             case TriggerTypes.altitude:
-                changeByTrigger(trigger, obj.pos.altitude > trigger.value );
+                changeByTrigger(trigger, obj.pos.altitude > trigger.randomizedValue );
             break;
             case TriggerTypes.lux:
-                changeByTrigger(trigger, obj.lux > trigger.value );
+                changeByTrigger(trigger, obj.lux > trigger.randomizedValue );
             break;
             default:
 
@@ -599,16 +626,32 @@ class DailySensors {
         
         switch(trigger.type){
             case TriggerTypes.time:
-                s += moment(trigger.value).format("LTS");
+                if (trigger.random && trigger.random!=0) {
+                    s += moment(trigger.randomizedValue).format("LTS");
+                    s+= ' (' + moment(trigger.value).format("LTS") + '±' + trigger.random + " min.)";
+                } else {
+                    s += moment(trigger.value).format("LTS");
+                }
+                
                 break;
             case TriggerTypes.event:
                 s += triggerEventName(trigger.value);
                 break;
-            case TriggerTypes.altitude:
-                s += formatRadians(trigger.value);
+            case TriggerTypes.altitude:                
+                if (trigger.random && trigger.random!=0) {
+                    s += formatRadians(trigger.randomizedValue);
+                    s+= ' (' +formatRadians(trigger.value)+ '±' + trigger.random + "°)";
+                } else {
+                    s += formatRadians(trigger.value);
+                }
                 break;
-            case TriggerTypes.lux:
-                s += Math.round(trigger.value);
+            case TriggerTypes.lux:                
+                if (trigger.random && trigger.random!=0) {
+                    s += Math.round(trigger.randomizedValue);
+                    s+= ' (' + Math.round(trigger.value) + '±' + trigger.random + ")";
+                } else {
+                    s += Math.round(trigger.value);
+                }
                 break;
             default:
                 s += trigger.value;

@@ -9,7 +9,8 @@
         {
             "active":true,
             "type":"time",
-            "value":"6:15"
+            "value":"6:15",
+            "random":10
         },
         {
             "active":false,
