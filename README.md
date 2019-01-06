@@ -92,11 +92,18 @@ You can also query the current state of the switch using http://[homebridge-ip]:
 
 ## Advanced TriggerEvents
 
-### Time
+### Randomize
 
-### Altitude
+### Operations
 
-### Lux
+### Trigger Condition
 
-### Event
+### Types
+#### Time
+
+#### Altitude
+
+#### Lux
+
+#### Event
 
