@@ -91,14 +91,30 @@ You can also query the current state of the switch using http://[homebridge-ip]:
 
 
 ## Advanced TriggerEvents
+There are some additional config variables available:
+- `tickTimer:milliSeconds`:  The interval at wich the Activation State is evaluated (defaults to 30s, `"tickTimer":30000`).
+- `debug:bool`: Wether you want to log some additional debug information (warning: this will generate a lot of output, defaults to false, `"debug":false`)
 
 ### Randomize
+Some TriggerEvent-Types can be randomized using the `random` setting. When this value is non zero, it is used to alter the given TriggerEvent value every day. When using `random` in a time based trigger, you can specify the amount of minutes added (or subtracted) at max from the value every day. The following example will generate times from **6:50 am** to **7:10 am**:
+```json
+    "trigger":[{
+        "active":true,
+        "type":"time",
+        "value":"7:00 AM",
+        "random":10
+    }]
+```
+
+See the type descriptions below for additional information on the behaviour of random for every type.
 
 ### Operations
 
 ### Trigger Condition
 
 ### Types
+The following settings are available for the given TriggerEvent-Types.
+
 #### Time
 
 #### Altitude
