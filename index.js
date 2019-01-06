@@ -6,10 +6,11 @@ const suncalc = require('suncalc'),
       express = require('express'),
       path = require('path'),
       fs = require('fs');
-      
+
+
 moment.locale('de');
 var Service, Characteristic, Accessory, UUIDGen;
-
+var WebServers = {};
 const constantSolarRadiation = 1361 //Solar Constant W/m²
 const arbitraryTwilightLux = 6.32     // W/m² egal 800 Lux
 const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4});
@@ -165,13 +166,16 @@ class DailySensors {
         const self = this;
         
         this.log = log;
+        
         this.override = undefined;
         this.debug = config.debug || false;
         this.config = config;
+        this.port = this.config.port ? this.config.port : 0;
+        this.webPath = path.resolve('/', './' + (this.config.webPath ? this.config.webPath : this.config.name.toLowerCase()) + '/'); 
         this.isActive = false;
         this.currentLux = false;
         this.timeout = this.config.tickTimer ? this.config.tickTimer : 30000;
-        this.luxService = undefined;                
+        this.luxService = undefined;               
 
         this.parseTrigger(config.trigger);
 
@@ -213,55 +217,66 @@ class DailySensors {
         this.log("Updating Initial State for " + this.config.name);
         this.updateState();
 
-        if (this.config.port > 0) {
-            const port = this.config.port;
-            if (this.debug) this.log(`Starting HTTP listener on port ${port}...`);
-            var expressApp = express();
-            expressApp.listen(port, (err) =>
-            {
-                if (err) {
-                    console.error(`Failed to start Express on port ${port}!`, err);
-                } else {
-                    if (this.debug) this.log(`Express is running on port ${port}.`)
-                }
-            });
+        if (this.port > 0) {
+            const port = this.port;
+            if (this.debug) this.log(`Starting HTTP listener on port ${port} for path ${this.webPath}...`);
+
+            var expressApp = WebServers[this.port];
+            var masterForPort = false;
+            if (expressApp === undefined) {
+                masterForPort = true;
+                expressApp = express();
+                expressApp.listen(port, (err) =>
+                {
+                    if (err) {
+                        console.error(`Failed to start Express on port ${port}!`, err);
+                    } else {
+                        if (this.debug) this.log(`Express is running on port ${port}.`)
+                    }
+                });
+
+                WebServers[this.port] = expressApp;
+            }
 
             
-            expressApp.get("/0", (request, response) => {
+            expressApp.get(this.webPath+"/0", (request, response) => {
                 this.override = false;
                 this.syncSwitchState();           
                 response.send('Switch forced to trigger OFF.\n');
                 if (this.debug) this.log("received OFF");
             });
-            expressApp.get("/1", (request, response) => {
+            expressApp.get(this.webPath+"/1", (request, response) => {
                 this.override = true;
                 this.syncSwitchState();          
                 response.send('Switch forced to trigger ON.\n');
                 if (this.debug) this.log("received ON");
             });
-            expressApp.get("/clear", (request, response) => {
+            expressApp.get(this.webPath+"/clear", (request, response) => {
                 this.override = undefined;
                 this.syncSwitchState();          
                 response.send('Switch operation normal.\n');
                 if (this.debug) this.log("received CLEAR");
             });
-            expressApp.get("/state", (request, response) => {
+            expressApp.get(this.webPath+"/state", (request, response) => {
                 response.send('Switch is ' + (this.getIsActive()?'ON':'OFF') + '\nOverride is ' + (this.override===undefined?'INACTIVE':'ACTIVE') + '\n');
                 if (this.debug) this.log("received STATE");
             });
-            expressApp.get("/", (request, response) => {               
+            expressApp.get(this.webPath+"/", (request, response) => {               
                 response.send(this.buildInfoHTML());               
             }); 
-            expressApp.get("/js/d3.js", (request, response) => {               
-                response.sendFile(path.join(__dirname, './js/d3.v5.min.js'));           
-            }); 
-            expressApp.get("/css/bootstrap.min.css", (request, response) => {               
-                response.sendFile(path.join(__dirname, './css/bootstrap.min.css'));           
-            }); 
-            expressApp.get("/css/bootstrap.min.css.map", (request, response) => {               
-                response.sendFile(path.join(__dirname, './css/bootstrap.min.css.map'));           
-            });  
-            this.log("HTTP listener started on port " + port + ".");
+
+            if (masterForPort) {
+                expressApp.get("/js/d3.js", (request, response) => {               
+                    response.sendFile(path.join(__dirname, './js/d3.v5.min.js'));           
+                }); 
+                expressApp.get("/css/bootstrap.min.css", (request, response) => {               
+                    response.sendFile(path.join(__dirname, './css/bootstrap.min.css'));           
+                }); 
+                expressApp.get("/css/bootstrap.min.css.map", (request, response) => {               
+                    response.sendFile(path.join(__dirname, './css/bootstrap.min.css.map'));           
+                });  
+            }
+            this.log("HTTP listener started on port " + port + "  for path " + this.webPath + ".");
         }
         
         this.log("Finished Initialization");

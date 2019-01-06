@@ -60,7 +60,7 @@ The plugin offers a very simple web interface to force trigger the switch, check
 ```json
   "accessories": [{
       "accessory": "DailySensors",
-      "name":"My new daily switch",
+      "name":"TheDaily",
       "port":7755,
       "dayStartsActive":false,    
       "trigger":[{
@@ -75,19 +75,30 @@ The plugin offers a very simple web interface to force trigger the switch, check
       }
   }]
 ```
-you may access the web interface through http://[homebridge-ip]:7755/ 
+you may access the web interface through http://[homebridge-ip]:7755/thedaily/. Note that the lowercase name of the accessory is part of the URI. If your name contains non ASCII characters, you may want to specify the path for URL using the `webPath` variable. Having a config like this:
+
+```json
+  "accessories": [{
+      "accessory": "DailySensors",
+      "name":"My very special Sensor Name",
+      "webPath":"/thedaily/me",
+      "port":7755,
+      //...
+```
+will for example start the webservice on the base URL http://[homebridge-ip]:7755//thedaily/me/. Also note that you may have multiple DailySensors on the same port. 
+
 
 ### Visualize TriggerEvents
 If you specify a config variable `port`, a web server will be started and bound. If you open the root resource of that server the system will display the activation state of the sensor over the course of the entire day as well as display the results of the Evaluation steps for every minute of the day.
 
 ### Force a state change
-If you access http://[homebridge-ip]:7755/1 (or http://[homebridge-ip]:7755/0) the switch is triggered with an **on** (**off**) event resulting in a **single press** (**double press**) notification. This locks the state of the switch to the given value until a activation state changes based on the defined rules.
+If you access http://[homebridge-ip]:7755/thedaily/1 (or http://[homebridge-ip]:7755/thedaily/0) the switch is triggered with an **on** (**off**) event resulting in a **single press** (**double press**) notification. This locks the state of the switch to the given value until a activation state changes based on the defined rules.
 
 ### Clear forced state
-If you force a state change as described above, you can restore the normal operation of the switch using  http://[homebridge-ip]:7755/clear
+If you force a state change as described above, you can restore the normal operation of the switch using  http://[homebridge-ip]:7755/thedaily/clear
 
 ### Query state
-You can also query the current state of the switch using http://[homebridge-ip]:7755/state
+You can also query the current state of the switch using http://[homebridge-ip]:7755/thedaily/state
 
 
 ## Advanced TriggerEvents
