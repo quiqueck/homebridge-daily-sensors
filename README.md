@@ -134,17 +134,33 @@ The operation controls how the activation state of the triggered TriggerEvent is
 ```
 
 The following values are recognized:
--`set` : The default behaviour. When the event is triggered the activation state is set to the specified value. 
--`and` : A logical **and** is used to calculate the new activation state. Evaluating the sensor at `11:00 PM` yields the following sequence: The evaluation starts with the activation state set to `false` (`"dayStartsActive":false`). Now the first TriggerEvent is calculated. Since `11:00 AM` (the current time) is larger than `10:00 AM` (the `"value":"10:00 AM"` of the TriggerEvent), the event is triggered. Since `false` (the current state) **and** `true` (the value of the TriggerEvent) results in `false` the activation state remains `false`.
--`or` : A logical **or** is used to calculate the new activation state. Evaluating the sensor at `11:00 PM` yields the following sequence: The evaluation starts with the activation state set to `false` (`"dayStartsActive":false`). Now the first TriggerEvent is calculated. Since `11:00 AM` (the current time) is larger than `10:00 AM` (the `"value":"10:00 AM"` of the TriggerEvent), the event is triggered. Since `false` (the current state) **or** `true` (the value of the TriggerEvent) results in `true` the activation state is change to `true`.
--`discard` : The TriggerEvent is ignored.
+- `set` : The default behaviour. When the event is triggered the activation state is set to the specified value. 
+- `and` : A logical **and** is used to calculate the new activation state. Evaluating the sensor at `11:00 PM` yields the following sequence: The evaluation starts with the activation state set to `false` (`"dayStartsActive":false`). Now the first TriggerEvent is calculated. Since `11:00 AM` (the current time) is larger than `10:00 AM` (the `"value":"10:00 AM"` of the TriggerEvent), the event is triggered. Since `false` (the current state) **and** `true` (the value of the TriggerEvent) results in `false` the activation state remains `false`.
+- `or` : A logical **or** is used to calculate the new activation state. Evaluating the sensor at `11:00 PM` yields the following sequence: The evaluation starts with the activation state set to `false` (`"dayStartsActive":false`). Now the first TriggerEvent is calculated. Since `11:00 AM` (the current time) is larger than `10:00 AM` (the `"value":"10:00 AM"` of the TriggerEvent), the event is triggered. Since `false` (the current state) **or** `true` (the value of the TriggerEvent) results in `true` the activation state is change to `true`.
+- `discard` : The TriggerEvent is ignored.
 
 #### Trigger Condition
-`trigger`
+By default an EventTrigger is triggered when the current value (like the current time) is greater than the specified value. Only a triggered event can alter the activation state. Using the `trigger` parameter, allows you to specify a different behaviour. The following values are possible:
 
 - `greater` : The default behaviour.
-- `less` :
-- `both` :
+- `less` : The Event is triggered when the current value is less than the specified one. When the event triggers before the actual value, the `active`-value is negated. The following Event will only trigger before **2:00 pm** and will set the activation state to `false` (since `"active":true` is negated):
+```json
+    "trigger":[{
+        "active":true,
+        "type":"time",
+        "value":"2:00 PM",
+        "trigger":"less"
+    }]
+```
+- `both` : The event is allways triggered. When the event triggers before the actual value, the `active`-value is negated. When the following Event is triggered **before 2:00 pm** the activation state changes to `false` when it is triggered **after 2:00 pm** the activation state changes to `true`.
+```json
+    "trigger":[{
+        "active":true,
+        "type":"time",
+        "value":"2:00 PM",
+        "trigger":"both"
+    }]
+```
 
 #### Days Of Week
 The `daysOfWeek`-value contains an array of weekdays (in the specified locale). The event can only trigger on days listed in this array. For example, the following TriggerEvent is only triggered on **Weekends** after **10:00 am**.
