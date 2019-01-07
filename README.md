@@ -142,9 +142,9 @@ The following values are recognized:
 #### Trigger Condition
 `trigger`
 
--`greater` : The default behaviour.
--`less` :
--`both` :
+- `greater` : The default behaviour.
+- `less` :
+- `both` :
 
 #### Days Of Week
 The `daysOfWeek`-value contains an array of weekdays (in the specified locale). The event can only trigger on days listed in this array. For example, the following TriggerEvent is only triggered on **Weekends** after **10:00 am**.
@@ -152,7 +152,7 @@ The `daysOfWeek`-value contains an array of weekdays (in the specified locale). 
     "trigger":[{
         "active":true,
         "type":"time",
-        "value":"10:00 AM"
+        "value":"10:00 AM",
         "daysOfWeek":["sa", "so"]
     }]
 ```
