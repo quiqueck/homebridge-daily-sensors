@@ -1,29 +1,34 @@
 {
     "accessory": "DailySensors",
-    "name":"Tageszeit",
+    "locale": "de",
+    "name":"Testzeit",
+    "webPath":"/testzeit",
     "port":8081,
     "tickTimer":10000,
     "dayStartsActive":false,
-    "debug":true,
+    "debug":false,
     "trigger":[        
         {
             "active":true,
             "type":"time",
             "value":"6:15",
-            "random":10
+            "random":20,
+            "daysOfWeek":[ "mo", "di", "mi", "do", "fr"]
         },
         {
             "active":false,
             "type":"time",
             "value":"9:00 PM",
-            "trigger":"greater"
+            "trigger":"greater",
+            "random":15
         },
         {
             "active":false,
             "type":"altitude",
-            "value":"0.03",
+            "value":"1.4",
             "trigger":"both",
-            "op":"and"
+            "op":"and",
+            "random":0.5
         }
     ],
     "location":{

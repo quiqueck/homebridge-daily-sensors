@@ -7,8 +7,6 @@ const suncalc = require('suncalc'),
       path = require('path'),
       fs = require('fs');
 
-
-moment.locale('de');
 var Service, Characteristic, Accessory, UUIDGen;
 var WebServers = {};
 const constantSolarRadiation = 1361 //Solar Constant W/m²
@@ -17,8 +15,6 @@ const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4})
 const TriggerWhen = Object.freeze({"greater":1, "less":-1, "both":0});
 const TriggerOps = Object.freeze({"set":0, "and":1, "or":2, 'discard':3});
 const EventTypes = Object.freeze({"nightEnd":1, "nauticalDawn":2, "dawn":3, "sunrise":4, "sunriseEnd":5, "goldenHourEnd":6, "solarNoon":7, "goldenHour":8, "sunsetStart":9, "sunset":10, "dusk":11, "nauticalDusk":12, "night":13, "nadir":14});
-
-
 
 function triggerOpsName(type){
     switch(type){
@@ -162,11 +158,10 @@ class DailySensors {
             !Number.isFinite(config.location.longitude)) {
         throw new Error('Daylight Sensors need a location to work properly');
         }
+        moment.locale(config.locale ? config.locale : 'en');
 
-        const self = this;
-        
-        this.log = log;
-        
+        const self = this;        
+        this.log = log;        
         this.override = undefined;
         this.debug = config.debug || false;
         this.config = config;
@@ -363,6 +358,17 @@ class DailySensors {
                 default:
                     return;
             }
+
+            let daysOfWeek = 0;
+            if (val.daysOfWeek !== undefined){                
+                val.daysOfWeek.forEach(v => {
+                    let d = moment().isoWeekday(v).isoWeekday()-1;
+                    let b = 1 << d;
+                    daysOfWeek |= b;
+                    console.log(v, d, b);
+                });
+                console.log(daysOfWeek);
+            }
             
             this.triggers.push({
                 type: type,
@@ -371,7 +377,8 @@ class DailySensors {
                 id:ID,
                 when: TriggerWhen[val.trigger ? val.trigger : 'greater'],
                 op:op,
-                random: random
+                random: random,
+                daysOfWeek: daysOfWeek
             });
         });
         if (this.debug) this.log(this.triggers);
@@ -521,6 +528,13 @@ class DailySensors {
 
     testTrigger(trigger, when, obj, result, single, silent) {
         const self = this;
+
+        if (trigger.daysOfWeek != 0) {
+            const dow = 1 << (moment(when).isoWeekday() - 1);
+            if ((trigger.daysOfWeek & dow) == 0) {
+                return result;
+            }
+        }
 
         function concat(r) {
             if (single) {
