@@ -100,13 +100,16 @@ If you force a state change as described above, you can restore the normal opera
 ### Query state
 You can also query the current state of the switch using http://[homebridge-ip]:7755/thedaily/state
 
-
-## Advanced TriggerEvents
+## Config Options
 There are some additional config variables available:
 - `tickTimer:milliSeconds`:  The interval at wich the Activation State is evaluated (defaults to 30s, `"tickTimer":30000`).
 - `debug:bool`: Wether you want to log some additional debug information (warning: this will generate a lot of output, defaults to false, `"debug":false`)
+- `locale:string`: The local used to parse date/time related values (like weekdays, defaults to english, `"locale":"en"`)
 
-### Randomize
+### Advanced TriggerEvents
+Each TriggerEvent can have additional settings that alter its behaviour.
+
+#### Randomize
 Some TriggerEvent-Types can be randomized using the `random` setting. When this value is non zero, it is used to alter the given TriggerEvent value every day. When using `random` in a time based trigger, you can specify the amount of minutes added (or subtracted) at max from the value every day. The following example will generate times from **6:50 am** to **7:10 am**:
 ```json
     "trigger":[{
@@ -119,18 +122,55 @@ Some TriggerEvent-Types can be randomized using the `random` setting. When this 
 
 See the type descriptions below for additional information on the behaviour of random for every type.
 
-### Operations
+#### Operations
+The operation controls how the activation state of the triggered TriggerEvent is applied to the result of the previous TriggerEvent. The behaviour is configured using the `op`-value. We will use the following trigger sequence as an example in the descriptions below. 
+```json
+    "dayStartsActive":false,    
+    "trigger":[{
+        "active":true,
+        "type":"time",
+        "value":"10:00 AM"
+    }]
+```
 
-### Trigger Condition
+The following values are recognized:
+-`set` : The default behaviour. When the event is triggered the activation state is set to the specified value. 
+-`and` : A logical **and** is used to calculate the new activation state. Evaluating the sensor at `11:00 PM` yields the following sequence: The evaluation starts with the activation state set to `false` (`"dayStartsActive":false`). Now the first TriggerEvent is calculated. Since `11:00 AM` (the current time) is larger than `10:00 AM` (the `"value":"10:00 AM"` of the TriggerEvent), the event is triggered. Since `false` (the current state) **and** `true` (the value of the TriggerEvent) results in `false` the activation state remains `false`.
+-`or` : A logical **or** is used to calculate the new activation state. Evaluating the sensor at `11:00 PM` yields the following sequence: The evaluation starts with the activation state set to `false` (`"dayStartsActive":false`). Now the first TriggerEvent is calculated. Since `11:00 AM` (the current time) is larger than `10:00 AM` (the `"value":"10:00 AM"` of the TriggerEvent), the event is triggered. Since `false` (the current state) **or** `true` (the value of the TriggerEvent) results in `true` the activation state is change to `true`.
+-`discard` : The TriggerEvent is ignored.
 
-### Types
+#### Trigger Condition
+`trigger`
+
+-`greater` : The default behaviour.
+-`less` :
+-`both` :
+
+#### Days Of Week
+The `daysOfWeek`-value contains an array of weekdays (in the specified locale). The event can only trigger on days listed in this array. For example, the following TriggerEvent is only triggered on **Weekends** after **10:00 am**.
+```json
+    "trigger":[{
+        "active":true,
+        "type":"time",
+        "value":"10:00 AM"
+        "daysOfWeek":["sa", "so"]
+    }]
+```
+
+#### Types
 The following settings are available for the given TriggerEvent-Types.
 
-#### Time
+##### Time
+- `value` :
+- `random` :
 
-#### Altitude
+##### Altitude
+- `value` :
+- `random` :
 
-#### Lux
+##### Lux
+- `value` :
+- `random` :
 
-#### Event
-
+##### Event
+- `value` : one of the following event types `nightEnd`, `nauticalDawn`, `dawn`, `sunrise`, `sunriseEnd`, `goldenHourEnd`, `solarNoon`, `goldenHour`, `sunsetStart`, `sunset`, `dusk`, `nauticalDusk`, `night`, `nadir`
