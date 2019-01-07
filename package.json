@@ -1,7 +1,7 @@
 {
   "name": "homebridge-daily-sensors",
-  "version": "0.0.3-alpha.004",
-  "description": "Daylight Sensor Plugin for Homebridge that provides a list of predefined (and customizable) sensors that trigger at certain sun positions.",
+  "version": "0.0.3-alpha.005",
+  "description": "DAytime Sensor Plugin for Homebridge that provides a list of randomizable predefined (and customizable) sensors that trigger at certain daily events (like sunrise), sun elevations, times or lux levels.",
   "main": "index.js",
   "dependencies": {
     "columnify": "^1.5.4",
