@@ -377,7 +377,7 @@ class DailySensors {
         //Info about this plugin
         let informationService = new Service.AccessoryInformation ()
             .setCharacteristic(Characteristic.Manufacturer, "Ambertation")
-            .setCharacteristic(Characteristic.Model, "Daylight Sensor")
+            .setCharacteristic(Characteristic.Model, "Daily Sensor")
             .setCharacteristic(Characteristic.SerialNumber, "0000")
             .setCharacteristic(Characteristic.FirmwareRevision, packageJSON.version);
 
@@ -806,13 +806,10 @@ class DailySensors {
     }
 
     buildIndexHTML(){
-        let linksHTML = '';
-        WebPaths[this.port].forEach(p => {
-            linksHTML += '<li><a href="'+p.path+'">'+p.name+'</a></li>';
-        })
+        
         let s = fs.readFileSync(path.join(__dirname, './index.html'), { encoding: 'utf8' });
 
-        s = s.replace('\{\{LINKS\}\}', linksHTML);
+        s = s.replace('\{\{VERSION\}\}', packageJSON.version);
         return s;
     }
 
