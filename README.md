@@ -81,6 +81,7 @@ You can connect a caldav ready calendar (like iCloud, see https://community.open
         "latitude":51.509865
       }
   }]
+```
 
 The activation state changes to `true` whenever an Event named **Urlaub** starts and to `false` whenever it ends.
 
