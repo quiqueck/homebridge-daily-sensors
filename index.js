@@ -5,13 +5,14 @@ const suncalc = require('suncalc'),
       packageJSON = require("./package.json"),
       express = require('express'),
       path = require('path'),
-      fs = require('fs');
+      fs = require('fs'),
+      ical = require('./lib/iCal.js');
 
 var Service, Characteristic, Accessory, UUIDGen;
 var WebServers = {};
 const constantSolarRadiation = 1361 //Solar Constant W/m²
 const arbitraryTwilightLux = 6.32     // W/m² egal 800 Lux
-const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4});
+const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4, "calendar":5});
 const TriggerWhen = Object.freeze({"greater":1, "less":-1, "both":0});
 const TriggerOps = Object.freeze({"set":0, "and":1, "or":2, 'discard':3});
 const EventTypes = Object.freeze({"nightEnd":1, "nauticalDawn":2, "dawn":3, "sunrise":4, "sunriseEnd":5, "goldenHourEnd":6, "solarNoon":7, "goldenHour":8, "sunsetStart":9, "sunset":10, "dusk":11, "nauticalDusk":12, "night":13, "nadir":14});
@@ -85,6 +86,10 @@ function triggerTypeName(type, withOp){
         case TriggerTypes.lux:
             ret = 'Lux'; 
             if (withOp) ret += ' >';
+            break;
+        case TriggerTypes.calendar:
+            ret = 'Calendar'; 
+            if (withOp) ret += ' =';
             break;
         default:
             ret = 'UNKNOWN';
@@ -164,7 +169,7 @@ class DailySensors {
         this.log = log;        
         this.override = undefined;
         this.debug = config.debug || false;
-        this.config = config;
+        this.config = config;        
         this.port = this.config.port ? this.config.port : 0;
         this.webPath = path.resolve('/', './' + (this.config.webPath ? this.config.webPath : this.config.name.toLowerCase()) + '/'); 
         this.isActive = false;
@@ -178,6 +183,7 @@ class DailySensors {
         //get the current event state as well as all future events
         let allEvents = this.eventsForDate(new Date(), false);
         this.events = [];
+        this.calendar = [];
         this.currentEvent = allEvents[0];
         const NOW = new Date();
         allEvents.forEach(event => {
@@ -355,6 +361,9 @@ class DailySensors {
                 case TriggerTypes.lux:
                     value = Math.round(val.value);
                 break;
+                case TriggerTypes.calendar:
+                    value = val.value; //regex
+                break;
                 default:
                     return;
             }
@@ -473,6 +482,16 @@ class DailySensors {
     }
 
     fetchEvents(when) {
+        this.calendar = [];
+        if (this.config.calendar) {      
+            ical.loadEventsForDay(moment(when), this.config.calendar, (list, start, end) => {
+                if (this.debug){
+                    console.log("New Calendar Events:\n", list.map(e => "  " + moment(e.startDate).format('LTS') + " - " + moment(e.endDate).format('LTS') + ": "+ e.summary).join("\n"));
+                }
+                this.calendar = list;
+            });
+        }
+
         var e1 = this.eventsForDate(when, false);
         var e2 = this.eventsForDate(moment().add(1, 'day').toDate(), false);
         var e0 = this.eventsForDate(moment().add(-1, 'day').toDate(), false);
@@ -508,6 +527,16 @@ class DailySensors {
                 this.log("generated", trigger.randomizedValue, "from", trigger.value, "+", trigger.random, rnd)
             }
         });
+    }
+
+    matchesCalEventNow(when, regex) {
+        const r = new RegExp(regex);
+        
+        const events = ical.eventsAt(moment(when), this.calendar).filter(e => e.summary.match(r)!==null);
+        if (this.debug || true){
+            console.log("Matching Events for '" + regex + "' at "+ moment(when).format('LTS') +":\n", events.map(e => "  " + moment(e.startDate).format('LTS') + " - " + moment(e.endDate).format('LTS') + ": "+ e.summary).join("\n"));            
+        }
+        return events.length > 0;
     }
 
     queueNextEvent() {
@@ -581,6 +610,9 @@ class DailySensors {
             break;
             case TriggerTypes.lux:
                 changeByTrigger(trigger, obj.lux > trigger.randomizedValue );
+            break;
+            case TriggerTypes.calendar:
+                changeByTrigger(trigger, this.matchesCalEventNow(when, trigger.value) );
             break;
             default:
 
@@ -681,6 +713,9 @@ class DailySensors {
                 } else {
                     s += Math.round(trigger.value);
                 }
+                break;
+            case TriggerTypes.calendar:                
+                s += trigger.value;                
                 break;
             default:
                 s += trigger.value;

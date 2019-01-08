@@ -1,5 +1,5 @@
 # homebridge-daily-sensors
-This programable switch can be triggered based on userdefine rules related to time, daily events, sun elevation
+This programable switch can be triggered based on userdefine rules related to time, daily events, calendar events, sun elevation
 or amount of ambient light. Each TriggerEvent can be randomized to make sure that the rules trigger at slightly different times each day.
 
 ## Simple Configuration
@@ -54,6 +54,35 @@ Evaluating the same set of TriggerEvents at `2:00 PM`generates a different activ
 In this case the switch will be notified twice a day: 
 - At `10:00 AM` when the activation state first changes from `false` to `true`resulting in a **single press**
 - At `1:00 PM` when the activation state changes back to `false`resulting in a **double press**
+
+## Calendar Connection
+You can connect a caldav ready calendar (like iCloud, see https://community.openhab.org/t/solved-apple-icloud-caldav-connection/32510/6 to find the url, username and password to access an iCloud calendar) and use calendar events as triggers. The following config file will connect to the iCloud-calendar **https://pxx-caldav.icloud.com/xxxxxx/calendars/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/** with the user name **someone@me.com** and the application password **application-password**:
+
+```json
+  "accessories": [{
+      "accessory": "DailySensors",
+      "name":"TheDaily",
+      "port":7755,
+      "dayStartsActive":false,
+      "calendar":{
+        "url":"https://pxx-caldav.icloud.com/xxxxxx/calendars/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/",
+        "username":"someone@me.com",
+        "password":"application-password",
+        "type":"caldav"
+      },    
+      "trigger":[{
+        "active":true,
+        "type":"calendar",
+        "value":"^Urlaub$",
+        "trigger":"both"        
+      }],
+      "location":{
+        "longitude":-0.118092,
+        "latitude":51.509865
+      }
+  }]
+
+The activation state changes to `true` whenever an Event named **Urlaub** starts and to `false` whenever it ends.
 
 ## Web Service
 The plugin offers a very simple web interface to force trigger the switch, check and reset the state as well as visualize the activation state of the switch over the day. This is a helpfull tool when debuging a given sequence of TriggerEvents. For example, when using the follwoing config
@@ -177,16 +206,26 @@ The `daysOfWeek`-value contains an array of weekdays (in the specified locale). 
 The following settings are available for the given TriggerEvent-Types.
 
 ##### Time
+- `type` : `time`
 - `value` :
 - `random` :
 
 ##### Altitude
+- `type` : `altitude`
 - `value` :
 - `random` :
 
 ##### Lux
+- `type` : `lux`
 - `value` :
 - `random` :
 
 ##### Event
+- `type` : `event`
 - `value` : one of the following event types `nightEnd`, `nauticalDawn`, `dawn`, `sunrise`, `sunriseEnd`, `goldenHourEnd`, `solarNoon`, `goldenHour`, `sunsetStart`, `sunset`, `dusk`, `nauticalDusk`, `night`, `nadir`
+- `trigger` : 
+
+##### Calendar Event
+- `type` : `calendar`
+- `value` : A JavaScript RegExp. `Hello` will match any Event that contains the Word **Hello** (ie. 'Hello World', 'My Beautiful Hello', 'Hello'). `^Hello$` will only match Events where the summary is the Word **Hello** ('Hello World' and 'My Beautiful Hello' do not match).
+- `trigger` : 
