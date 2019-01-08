@@ -115,7 +115,7 @@ you may access the web interface through http://[homebridge-ip]:7755/thedaily/. 
       "port":7755,
       //...
 ```
-will for example start the webservice on the base URL http://[homebridge-ip]:7755//thedaily/me/. Also note that you may have multiple DailySensors on the same port. 
+will for example start the webservice on the base URL http://[homebridge-ip]:7755/thedaily/me/. Also note that you may have multiple DailySensors on the same port. To receive an overview of the available sensors on a given port you can open http://[homebridge-ip]:7755/.
 
 
 ### Visualize TriggerEvents

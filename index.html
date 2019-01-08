@@ -9,11 +9,127 @@
         <title>Daily Sensors Overview</title>
         
         <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/style.css">
+        <script src="/js/jquery.min.js"></script>
         <script src="/js/d3.js"></script>
+        <style>
+            body {
+                margin:20px;
+            }
+        </style>
     </head>
     <body>
-        <ul>
-            {{LINKS}}
-        </ul>
+        <templates>
+            <div class="card" style="width: 18rem; max-width: 18rem" template='sensorcard'>
+                <h5 class="card-header" id="title"></h5>                
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Activation State: <b id="state"></b></h6>
+                    <p class="card-text">
+                        <div style="margin-left:10px;margin-bottom:20px" id="override">
+                            Forced: <span id="forced"></span><br>
+                            Actual: <span id="actual"></span><br>
+                        </div>
+                        <button type="button" class="btn btn-success" id="on">On</button>
+                        <button type="button" class="btn btn-danger" id="off">Off</button>
+                        <button type="button" class="btn btn-info" style="margin-left:10px" id="clear">Clear</button>
+                    </p>
+                    
+                </div>
+                <div class="card-footer text-muted">
+                        <a href="#" class="card-link" id="details">Details</a>
+                </div>
+            </div>
+        </templates>
+        
+        <div id="content" >
+            <div class="card-deck" haveCards>
+            </div>
+        </div>
     </body>
+    <script type="text/javascript">
+        function updateAccesory(card, info, repeat){            
+            card.find('#state').text(info.activeState ? 'ON' : 'OFF');
+            if (info.override===undefined) {
+                card.find('#override').css('display', 'block');
+                card.find('#override').addClass('text-muted');
+                card.find('#forced').text('---');
+                card.find('#actual').text(info.activeState ? 'ON' : 'OFF');
+            } else {
+                card.find('#override').css('display', 'block');
+                card.find('#override').removeClass('text-muted');
+                card.find('#forced').text(info.override.forced ? 'ON' : 'OFF');
+                card.find('#actual').text(info.override.actual ? 'ON' : 'OFF');
+            }
+
+            if (repeat !== undefined) {
+                setTimeout(updateState.bind(null, card, info.accessory.path, repeat), repeat);
+            }
+        }
+
+        function updateState(card, path, repeat){
+            $.get(path+'/state')
+                .done(d => {
+                    updateAccesory(card, d, repeat);
+                }).fail(e => {
+                    console.error(e);
+                    if (repeat !== undefined) {
+                        setTimeout(updateState.bind(null, card, path, repeat), 2*repeat);
+                    }
+                });
+        }
+
+        $.get( "/accessories")
+            .done(function(d) {
+                console.log( "Received Accesory List", d.accessories );
+                $.each(d.accessories, (idx, sensor) => {
+                    let card = $('templates div[template=sensorcard]').clone();
+                    card.find('#title').text(sensor.name);
+                    card.find('#details').attr('href', sensor.path);
+
+                    card.find('#on').click(event => {
+                        $.get(sensor.path+'/1')
+                            .done(d => {
+                                console.log(d);
+                                updateAccesory(card, d);
+                            }).fail(e => {
+                                console.error(e);
+                                alert("Error Forcing Sensor On: " + e.toString());
+                            });
+                    });
+
+                    card.find('#off').click(event => {
+                        $.get(sensor.path+'/0')
+                            .done(d => {
+                                console.log(d);
+                                updateAccesory(card, d);
+                            }).fail(e => {
+                                console.error(e);
+                                alert("Error Forcing Sensor Off: " + e.toString());
+                            });
+                    });
+
+                    card.find('#clear').click(event => {
+                        $.get(sensor.path+'/clear')
+                            .done(d => {
+                                console.log(d);
+                                updateAccesory(card, d);
+                            }).fail(e => {
+                                console.error(e);
+                                alert("Error Clear Force: " + e.toString());
+                            });
+                    });
+                    updateAccesory(card, sensor.info, 1000);
+                    card.appendTo('[haveCards]');
+                });
+            })
+            .fail(function(e) {
+                console.error( "Error Reading Accesory List", e);
+            })
+            .always(function() {
+                console.log( "Finished Reading Accesory List" );
+            });
+        
+        
+        
+    </script>    
 </html>

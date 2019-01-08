@@ -262,7 +262,8 @@ class DailySensors {
             }
             paths.push({
                 path:this.webPath,
-                name:this.config.name
+                name:this.config.name,
+                object:this
             })
 
             
@@ -310,15 +311,36 @@ class DailySensors {
                 expressApp.get("/js/d3.js", (request, response) => {               
                     response.sendFile(path.join(__dirname, './js/d3.v5.min.js'));           
                 }); 
+                expressApp.get("/js/jquery.min.js", (request, response) => {               
+                    response.sendFile(path.join(__dirname, './js/jquery-3.3.1.min.js'));           
+                }); 
                 expressApp.get("/css/bootstrap.min.css", (request, response) => {               
                     response.sendFile(path.join(__dirname, './css/bootstrap.min.css'));           
                 }); 
+                expressApp.get("/css/style.css", (request, response) => {               
+                    response.sendFile(path.join(__dirname, './css/style.css'));           
+                }); 
+                
                 expressApp.get("/css/bootstrap.min.css.map", (request, response) => {               
                     response.sendFile(path.join(__dirname, './css/bootstrap.min.css.map'));           
                 }); 
                 expressApp.get("/", (request, response) => {               
                     response.send(this.buildIndexHTML());           
-                });  
+                }); 
+                expressApp.get("/accessories", (request, response) => {   
+                    var json = {
+                        host:request.headers.host,
+                        accessories:[]
+                    }
+                    WebPaths[this.port].forEach(path => {
+                        json.accessories.push({
+                            path:path.path,
+                            name:path.name,
+                            info:path.object.JSONCommonResponse(request)
+                        });
+                    });
+                    response.json(json);           
+                });
             }
             this.log("HTTP listener started on port " + port + "  for path " + this.webPath + ".");
         }
