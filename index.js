@@ -111,6 +111,20 @@ function triggerWhenName(type){
     }
 }
 
+function dayOfWeekNameList(mask){
+    let s = ''
+    for (var i = 1; i<=7; i++){
+        if ((mask & (1<<(i-1))) != 0){
+            s+= moment().isoWeekday(i).format('dd')+" "
+        }
+    }
+    s = s.trim();
+    if (s!=''){
+        s = '(on ' + s + ')';
+    }
+    return s;
+}
+
 module.exports = function(homebridge) {
     console.log("homebridge API version: " + homebridge.version);
 
@@ -376,7 +390,6 @@ class DailySensors {
                     daysOfWeek |= b;
                 });
             }
-            
             this.triggers.push({
                 type: type,
                 active: val.active !== undefined ? val.active : true,
@@ -682,6 +695,7 @@ class DailySensors {
     formatTrigger(trigger){
         let s = ''
         s += triggerOpsName(trigger.op) + ' '
+        s = (s + dayOfWeekNameList(trigger.daysOfWeek)).trim() + ' ';
         s = (s + triggerWhenName(trigger.when)).trim() + ' ';
         s = (s + triggerTypeName(trigger.type, true)).trim() + ' ';
         
