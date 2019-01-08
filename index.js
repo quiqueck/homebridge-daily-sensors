@@ -533,7 +533,7 @@ class DailySensors {
         const r = new RegExp(regex);
         
         const events = ical.eventsAt(moment(when), this.calendar).filter(e => e.summary.match(r)!==null);
-        if (this.debug || true){
+        if (this.debug){
             console.log("Matching Events for '" + regex + "' at "+ moment(when).format('LTS') +":\n", events.map(e => "  " + moment(e.startDate).format('LTS') + " - " + moment(e.endDate).format('LTS') + ": "+ e.summary).join("\n"));            
         }
         return events.length > 0;
