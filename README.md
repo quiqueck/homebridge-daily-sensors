@@ -86,7 +86,10 @@ You can connect a caldav ready calendar (like iCloud, see https://community.open
 The activation state changes to `true` whenever an Event named **Urlaub** starts and to `false` whenever it ends.
 
 ## Web Service
-The plugin offers a very simple web interface to force trigger the switch, check and reset the state as well as visualize the activation state of the switch over the day. This is a helpfull tool when debuging a given sequence of TriggerEvents. For example, when using the follwoing config
+The plugin offers a very simple web interface to force trigger the switch, check and reset the state as well as visualize the activation state of the switch over the day. This is a helpfull tool when debuging a given sequence of TriggerEvents. 
+
+### Configuration 
+For example, when using the follwoing config
 ```json
   "accessories": [{
       "accessory": "DailySensors",
@@ -115,8 +118,12 @@ you may access the web interface through http://[homebridge-ip]:7755/thedaily/. 
       "port":7755,
       //...
 ```
-will for example start the webservice on the base URL http://[homebridge-ip]:7755/thedaily/me/. Also note that you may have multiple DailySensors on the same port. To receive an overview of the available sensors on a given port you can open http://[homebridge-ip]:7755/.
+will for example start the webservice on the base URL http://[homebridge-ip]:7755/thedaily/me/. Also note that you can have multiple DailySensors on the same port. 
 
+### Index Page
+To receive an overview of the available sensors on a given port you can open http://[homebridge-ip]:7755/. For a setup with tow configured accesories on the same port this will yield the following result:
+
+![The Main Index Screen](/support/index.png)
 
 ### Visualize TriggerEvents
 If you specify a config variable `port`, a web server will be started and bound. If you open the root resource of that server the system will display the activation state of the sensor over the course of the entire day as well as display the results of the Evaluation steps for every minute of the day.
