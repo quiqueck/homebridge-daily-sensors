@@ -1,148 +1,19 @@
 'use strict';
 const suncalc = require('suncalc'),
       moment = require('moment'),
-      columnify = require('columnify'),
       packageJSON = require("./package.json"),
       path = require('path'),
       ical = require('./lib/iCal.js'),
-      web =  require('./lib/web.js');
+      web =  require('./lib/web.js'),
+      $ = require('./lib/helpers.js');
 
 var Service, Characteristic, Accessory, UUIDGen;
 const constantSolarRadiation = 1361 //Solar Constant W/m²
 const arbitraryTwilightLux = 6.32     // W/m² egal 800 Lux
-const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4, "calendar":5});
-const TriggerWhen = Object.freeze({"greater":1, "less":-1, "both":0});
-const TriggerOps = Object.freeze({"set":0, "and":1, "or":2, 'discard':3});
-const EventTypes = Object.freeze({"nightEnd":1, "nauticalDawn":2, "dawn":3, "sunrise":4, "sunriseEnd":5, "goldenHourEnd":6, "solarNoon":7, "goldenHour":8, "sunsetStart":9, "sunset":10, "dusk":11, "nauticalDusk":12, "night":13, "nadir":14});
-
-function triggerOpsName(type){
-    switch(type){
-        case TriggerOps.set:
-            return ''; 
-        case TriggerOps.and:
-            return '[AND]'; 
-        case TriggerOps.or:
-            return '[OR]';  
-        case TriggerOps.discard:
-            return '[DROP]'; 
-        default:
-        return '[?]';
-    }
-}
-
-function triggerEventName(type){
-    switch(type){
-        case EventTypes.nightEnd:
-            return 'Night End'; 
-        case EventTypes.nauticalDawn:
-            return 'Nautical Dawn'; 
-        case EventTypes.dawn:
-            return 'Dawn';  
-        case EventTypes.sunrise:
-            return 'Sunrise'; 
-        case EventTypes.sunriseEnd:
-            return 'Sunrise End'; 
-        case EventTypes.goldenHourEnd:
-            return 'Golden Hour End';
-        case EventTypes.solarNoon:
-            return 'Solar Noon'; 
-        case EventTypes.goldenHour:
-            return 'Golden Hour'; 
-        case EventTypes.sunsetStart:
-            return 'Sunset Start';  
-        case EventTypes.sunset:
-            return 'Sunset'; 
-        case EventTypes.dusk:
-            return 'Dusk'; 
-        case EventTypes.nauticalDusk:
-            return 'Nautical Dusk'; 
-        case EventTypes.night:
-            return 'Night'; 
-        case EventTypes.nadir:
-            return 'Lowest Sun';    
-        default:
-        return 'UNKNOWN';
-    }
-}
-
-function triggerTypeName(type, withOp){
-    if (withOp === undefined) withOp = false;
-    var ret = ''
-    switch(type){
-        case TriggerTypes.event:
-            ret = 'EVENT'; 
-            if (withOp) ret += ' =';
-            break;
-        case TriggerTypes.time:
-            ret = 'Time'; 
-            if (withOp) ret += ' >';
-            break;
-        case TriggerTypes.altitude:
-            ret = 'Altitude'; 
-            if (withOp) ret += ' >';
-            break;
-        case TriggerTypes.lux:
-            ret = 'Lux'; 
-            if (withOp) ret += ' >';
-            break;
-        case TriggerTypes.calendar:
-            ret = 'Calendar'; 
-            if (withOp) ret += ' =';
-            break;
-        default:
-            ret = 'UNKNOWN';
-    }
-    
-    return ret;
-}
-
-function triggerWhenName(type){
-    switch(type){
-        case TriggerWhen.greater:
-            return 'Trigger If'; 
-        case TriggerWhen.less:
-            return 'Trigger If Not'; 
-        case TriggerWhen.both:
-            return '';         
-        default:
-        return '?';
-    }
-}
-
-function dayOfWeekNameList(mask){
-    let s = ''
-    for (var i = 1; i<=7; i++){
-        if ((mask & (1<<(i-1))) != 0){
-            s+= moment().isoWeekday(i).format('dd')+" "
-        }
-    }
-    s = s.trim();
-    if (s!=''){
-        s = '(on ' + s + ')';
-    }
-    return s;
-}
 
 module.exports = function(homebridge) {
     console.log("homebridge API version: " + homebridge.version);
-
-    console.logEvents = function(events){
-        if (events === undefined) return;
-        const NOW = new Date();
-        let printData = [];
-        events.forEach(function(event){            
-            printData.push({
-                event: event.event,
-                when: moment(event.when).fromNow(),
-                time: moment(event.when).format('HH:mm:ss'),
-                day: moment(event.when).format('ll'), 
-                dif:Math.round((event.when - NOW) / (1000 * 60)),
-                lux:event.lux,
-                altitude:event.pos.altitude * 180.0 / Math.PI 
-            })
-        });
-        console.log(columnify(printData, {minWidth:15}));
-    }    
+    console.logEvents = $.logEvents;
 
     // Accessory must be created from PlatformAccessory Constructor
     Accessory = homebridge.platformAccessory;
@@ -155,18 +26,7 @@ module.exports = function(homebridge) {
     homebridge.registerAccessory("homebridge-daily-sensors", "DailySensors", DailySensors);
 }
 
-function justTime(date){
-    const m = moment(date);
-    return moment({h: m.hours(), m: m.minutes(), s: m.seconds()});        
-}
 
-function formatRadians(rad){
-    return formatNumber((rad/Math.PI)*180)+'°';
-}
-
-function formatNumber(nr){
-    return parseFloat(Math.round(nr * 100) / 100).toFixed(2)
-}
 
 class DailySensors {
     constructor(log, config, api) {
@@ -293,27 +153,27 @@ class DailySensors {
         this.triggers = []
         let ID = 0;
         trigger.forEach(val => {
-            const type = TriggerTypes[val.type];
-            const op = val.op !== undefined ? TriggerOps[val.op] : TriggerOps.set;
+            const type = $.TriggerTypes[val.type];
+            const op = val.op !== undefined ? $.TriggerOps[val.op] : $.TriggerOps.set;
             let value = '';
             let random = val.random;
             ID++;
             switch(type){
-                case TriggerTypes.event:
-                    value = EventTypes[val.value];
+                case $.TriggerTypes.event:
+                    value = $.EventTypes[val.value];
                 break;
-                case TriggerTypes.time:
+                case $.TriggerTypes.time:
                     value = moment(val.value, ['h:m a', 'H:m']).toDate();
                 break;
-                case TriggerTypes.altitude:
+                case $.TriggerTypes.altitude:
                     value = (val.value / 180.0) * Math.PI;
                     random = (val.random / 180.0) * Math.PI;
                     //suncalc.addTime(val.value, ID+'_AM', ID+'_PM');
                 break;
-                case TriggerTypes.lux:
+                case $.TriggerTypes.lux:
                     value = Math.round(val.value);
                 break;
-                case TriggerTypes.calendar:
+                case $.TriggerTypes.calendar:
                     value = val.value; //regex
                 break;
                 default:
@@ -333,7 +193,7 @@ class DailySensors {
                 active: val.active !== undefined ? val.active : true,
                 value: value,
                 id:ID,
-                when: TriggerWhen[val.trigger ? val.trigger : 'greater'],
+                when: $.TriggerWhen[val.trigger ? val.trigger : 'greater'],
                 op:op,
                 random: random,
                 daysOfWeek: daysOfWeek
@@ -450,7 +310,7 @@ class DailySensors {
         this.events = e0.concat(e1).concat(e2);
         if (this.debug) this.log(moment(when).format('LTS'));
         this.events.forEach(event => {
-            if (this.debug) this.log(moment(event.when).format('LTS'), event.event, formatRadians(event.pos.altitude), Math.round(event.lux));
+            if (this.debug) this.log(moment(event.when).format('LTS'), event.event, $.formatRadians(event.pos.altitude), Math.round(event.lux));
         });
 
         this.triggers.forEach(trigger => {
@@ -462,11 +322,11 @@ class DailySensors {
 
             let rnd = Math.random() * 2*r - r;
             switch (trigger.type ) {
-                case TriggerTypes.lux:
-                case TriggerTypes.altitude:
+                case $.TriggerTypes.lux:
+                case $.TriggerTypes.altitude:
                     trigger.randomizedValue = trigger.value + rnd;
                     break;
-                case TriggerTypes.time:
+                case $.TriggerTypes.time:
                     let m = moment(trigger.value);
                     m = m.add(rnd, 'minutes');
                     trigger.randomizedValue = m.toDate();
@@ -520,13 +380,13 @@ class DailySensors {
                 return;
             }
             switch(trigger.op){
-                case TriggerOps.and:
+                case $.TriggerOps.and:
                     result = result && r;
                     break;
-                case TriggerOps.or:
+                case $.TriggerOps.or:
                     result = result || r;
                     break;
-                case TriggerOps.discard:
+                case $.TriggerOps.discard:
                     break;
                 default:
                     result = r;
@@ -534,35 +394,35 @@ class DailySensors {
         }
 
         function changeByTrigger(trigger, what){
-            if (what && (trigger.when == TriggerWhen.greater || trigger.when == TriggerWhen.both)) {
+            if (what && (trigger.when == $.TriggerWhen.greater || trigger.when == $.TriggerWhen.both)) {
                 
                 concat(trigger.active);
                 if (!silent) obj.conditions.push({trigger:trigger, active:trigger.active, result:result});
-                if (!silent && self.debug) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
-            } else if (!what && (trigger.when == TriggerWhen.less || trigger.when == TriggerWhen.both)) {
+                if (!silent && self.debug) self.log("    Trigger changed result -- " + $.formatTrigger(trigger) + " => " + result);
+            } else if (!what && (trigger.when == $.TriggerWhen.less || trigger.when == $.TriggerWhen.both)) {
                 concat(!trigger.active);
                 if (!silent) obj.conditions.push({trigger:trigger, active:!trigger.active, result:result});    
-                if (!silent && self.debug) self.log("    Trigger changed result -- " + self.formatTrigger(trigger) + " => " + result);
+                if (!silent && self.debug) self.log("    Trigger changed result -- " + $.formatTrigger(trigger) + " => " + result);
             }
         } 
 
         switch(trigger.type) {
-            case TriggerTypes.time:                    
-                changeByTrigger(trigger, justTime(when) > justTime(trigger.randomizedValue));
+            case $.TriggerTypes.time:                    
+                changeByTrigger(trigger, $.justTime(when) > $.justTime(trigger.randomizedValue));
             break;
-            case TriggerTypes.event:
+            case $.TriggerTypes.event:
                 const event = this.fetchEventAt(when);
                 if (event) {
-                    changeByTrigger(trigger, EventTypes[event.event] == trigger.value);
+                    changeByTrigger(trigger, $.EventTypes[event.event] == trigger.value);
                 }
             break;
-            case TriggerTypes.altitude:
+            case $.TriggerTypes.altitude:
                 changeByTrigger(trigger, obj.pos.altitude > trigger.randomizedValue );
             break;
-            case TriggerTypes.lux:
+            case $.TriggerTypes.lux:
                 changeByTrigger(trigger, obj.lux > trigger.randomizedValue );
             break;
-            case TriggerTypes.calendar:
+            case $.TriggerTypes.calendar:
                 changeByTrigger(trigger, this.matchesCalEventNow(when, trigger.value) );
             break;
             default:
@@ -628,51 +488,5 @@ class DailySensors {
         this.switchService
             .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
             .setValue(this.getIsActive() ? Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS : Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
-    }
-
-    formatTrigger(trigger){
-        let s = ''
-        s += triggerOpsName(trigger.op) + ' '
-        s = (s + dayOfWeekNameList(trigger.daysOfWeek)).trim() + ' ';
-        s = (s + triggerWhenName(trigger.when)).trim() + ' ';
-        s = (s + triggerTypeName(trigger.type, true)).trim() + ' ';
-        
-        switch(trigger.type){
-            case TriggerTypes.time:
-                if (trigger.random && trigger.random!=0) {
-                    s += moment(trigger.randomizedValue).format("LTS");
-                    s+= ' (' + moment(trigger.value).format("LTS") + '±' + trigger.random + " min.)";
-                } else {
-                    s += moment(trigger.value).format("LTS");
-                }
-                
-                break;
-            case TriggerTypes.event:
-                s += triggerEventName(trigger.value);
-                break;
-            case TriggerTypes.altitude:                
-                if (trigger.random && trigger.random!=0) {
-                    s += formatRadians(trigger.randomizedValue);
-                    s+= ' (' +formatRadians(trigger.value)+ '±' + formatRadians(trigger.random) + ")";
-                } else {
-                    s += formatRadians(trigger.value);
-                }
-                break;
-            case TriggerTypes.lux:                
-                if (trigger.random && trigger.random!=0) {
-                    s += Math.round(trigger.randomizedValue);
-                    s+= ' (' + Math.round(trigger.value) + '±' + trigger.random + ")";
-                } else {
-                    s += Math.round(trigger.value);
-                }
-                break;
-            case TriggerTypes.calendar:                
-                s += trigger.value;                
-                break;
-            default:
-                s += trigger.value;
-        }
-        s += ' (' + trigger.active + ')';
-        return s;
     }
 }
