@@ -6,9 +6,12 @@
   "dependencies": {
     "columnify": "^1.5.4",
     "express": "^4.16.4",
+    "ical-expander": "^2.0.0",
     "moment": "^2.23.0",
+    "moment-range": "^4.0.1",
     "path": "^0.12.7",
-    "suncalc": "^1.8.0"
+    "suncalc": "^1.8.0",
+    "xml-js": "^1.6.8"
   },
   "devDependencies": {
     "hap-nodejs": "^0.4.47"
