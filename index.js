@@ -365,9 +365,7 @@ class DailySensors {
                     let d = moment().isoWeekday(v).isoWeekday()-1;
                     let b = 1 << d;
                     daysOfWeek |= b;
-                    console.log(v, d, b);
                 });
-                console.log(daysOfWeek);
             }
             
             this.triggers.push({
