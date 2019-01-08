@@ -303,6 +303,15 @@ class DailySensors {
                 response.json(this.JSONCommonResponse(request));
                 if (this.debug) this.log("received STATE");
             });
+            expressApp.get(this.webPath+"/reload", (request, response) => {
+                this.fetchEvents(new Date());
+                response.json({
+                    operation:'reload',
+                    ok:true,
+                    ...this.JSONCommonResponse(request)
+                });
+                if (this.debug) this.log("received STATE");
+            });
             expressApp.get(this.webPath+"/", (request, response) => {               
                 response.send(this.buildInfoHTML());               
             }); 
@@ -313,6 +322,9 @@ class DailySensors {
                 }); 
                 expressApp.get("/js/jquery.min.js", (request, response) => {               
                     response.sendFile(path.join(__dirname, './js/jquery-3.3.1.min.js'));           
+                }); 
+                expressApp.get("/js/bootstrap.min.js", (request, response) => {               
+                    response.sendFile(path.join(__dirname, './js/bootstrap.min.js'));           
                 }); 
                 expressApp.get("/css/bootstrap.min.css", (request, response) => {               
                     response.sendFile(path.join(__dirname, './css/bootstrap.min.css'));           

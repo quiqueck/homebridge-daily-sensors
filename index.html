@@ -11,6 +11,7 @@
         <link rel="stylesheet" href="/css/bootstrap.min.css">
         <link rel="stylesheet" href="/css/style.css">
         <script src="/js/jquery.min.js"></script>
+        <script src="/js/bootstrap.min.js"></script>
         <script src="/js/d3.js"></script>
         <style>
             body {
@@ -20,6 +21,18 @@
     </head>
     <body>
         <templates>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert" template='alert'>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <span id="message"></span>
+            </div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert" template='alertsuccess'>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <span id="message"></span>
+                </div>
             <div class="card" style="width: 18rem; max-width: 18rem" template='sensorcard'>
                 <h5 class="card-header" id="title"></h5>                
                 <div class="card-body">
@@ -31,18 +44,21 @@
                         </div>
                         <button type="button" class="btn btn-success" id="on">On</button>
                         <button type="button" class="btn btn-danger" id="off">Off</button>
-                        <button type="button" class="btn btn-info" style="margin-left:10px" id="clear">Clear</button>
+                        <button type="button" class="btn btn-info" style="margin-left:10px" id="clear">Reset</button>
+                        
                     </p>
                     
                 </div>
                 <div class="card-footer text-muted">
                         <a href="#" class="card-link" id="details">Details</a>
+                        <button type="button" class="btn btn-warning float-right" id="reload">Reload Events</button>
                 </div>
             </div>
         </templates>
         
-        <div id="content" >
+        <div id="content" >            
             <h1 style="margin-bottom:30px">Daily Sensors ({{VERSION}})</h1>
+            <div id="alerts"></div>
             <div class="card-deck" haveCards>
             </div>
         </div>
@@ -79,6 +95,31 @@
                 });
         }
 
+        function pushAlert(type, message, fade){
+            let alertCard = $('templates div[template='+type+']').clone();  
+            alertCard.find('#message').html(message);
+            alertCard.appendTo('#alerts');  
+            if (fade) {
+                setTimeout(()=>{
+                    alertCard.alert('close');
+                }, 5000)
+            }
+        }
+
+        function addButtonClick(button, card, sensor, command, description){
+            button.click(event => {
+                $.get(sensor.path + '/' + command)
+                    .done(d => {
+                        console.log(command, d);
+                        pushAlert('alertsuccess', 'Did succesfully <strong>' + description + '</strong> the sensor <b>'+sensor.name+'</b> ('+sensor.path+').', true); 
+                        updateAccesory(card, d);
+                    }).fail(e => {
+                        console.error(command, e, e.status, e.statusText); 
+                        pushAlert('alert', 'Could not ' + description + ' the sensor <b>'+sensor.name+'</b> ('+sensor.path+').<br>Error was: <em>' + e.status + ' ' + e.statusText + ' ('+e.state()+')</em>', true);                                                
+                    });
+            });
+        }
+
         $.get( "/accessories")
             .done(function(d) {
                 console.log( "Received Accesory List", d.accessories );
@@ -87,38 +128,11 @@
                     card.find('#title').text(sensor.name);
                     card.find('#details').attr('href', sensor.path);
 
-                    card.find('#on').click(event => {
-                        $.get(sensor.path+'/1')
-                            .done(d => {
-                                console.log(d);
-                                updateAccesory(card, d);
-                            }).fail(e => {
-                                console.error(e);
-                                alert("Error Forcing Sensor On: " + e.toString());
-                            });
-                    });
+                    addButtonClick(card.find('#on'), card, sensor, '1', 'turn on');
+                    addButtonClick(card.find('#off'), card, sensor, '0', 'turn off');
+                    addButtonClick(card.find('#clear'), card, sensor, 'clear', 'reset');
+                    addButtonClick(card.find('#reload'), card, sensor, 'reload', 'reload the event-data of');
 
-                    card.find('#off').click(event => {
-                        $.get(sensor.path+'/0')
-                            .done(d => {
-                                console.log(d);
-                                updateAccesory(card, d);
-                            }).fail(e => {
-                                console.error(e);
-                                alert("Error Forcing Sensor Off: " + e.toString());
-                            });
-                    });
-
-                    card.find('#clear').click(event => {
-                        $.get(sensor.path+'/clear')
-                            .done(d => {
-                                console.log(d);
-                                updateAccesory(card, d);
-                            }).fail(e => {
-                                console.error(e);
-                                alert("Error Clear Force: " + e.toString());
-                            });
-                    });
                     updateAccesory(card, sensor.info, 1000);
                     card.appendTo('[haveCards]');
                 });
