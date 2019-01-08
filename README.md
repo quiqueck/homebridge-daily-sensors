@@ -86,7 +86,7 @@ You can connect a caldav ready calendar (like iCloud, see https://community.open
 The activation state changes to `true` whenever an Event named **Urlaub** starts and to `false` whenever it ends.
 
 ## Web Service
-The plugin offers a very simple web interface to force trigger the switch, check and reset the state as well as visualize the activation state of the switch over the day. This is a helpfull tool when debuging a given sequence of TriggerEvents. 
+The plugin offers a very simple web interface to force trigger the switch, check and reset the state as well as visualize the activation state of the switch over the day. This is a helpfull tool when debuging a given sequence of TriggerEvents. If you specify a config variable `port`, a web server will be started and bound. The index page (see below) will display an overview of available Accesories.
 
 ### Configuration 
 For example, when using the follwoing config
@@ -126,7 +126,9 @@ To receive an overview of the available sensors on a given port you can open htt
 ![The Main Index Screen](/support/index.png)
 
 ### Visualize TriggerEvents
-If you specify a config variable `port`, a web server will be started and bound. If you open the root resource of that server the system will display the activation state of the sensor over the course of the entire day as well as display the results of the Evaluation steps for every minute of the day.
+If you open the root resource of an accesory (http://[homebridge-ip]:7755/thedaily/) the system will display the activation state of the sensor over the course of the entire day as well as display the results of the Evaluation steps for every minute of the day.
+
+![The Activation Info Screen](/support/info.png)
 
 ### Force a state change
 If you access http://[homebridge-ip]:7755/thedaily/1 (or http://[homebridge-ip]:7755/thedaily/0) the switch is triggered with an **on** (**off**) event resulting in a **single press** (**double press**) notification. This locks the state of the switch to the given value until a activation state changes based on the defined rules.
@@ -136,6 +138,10 @@ If you force a state change as described above, you can restore the normal opera
 
 ### Query state
 You can also query the current state of the switch using http://[homebridge-ip]:7755/thedaily/state
+
+### Force reload
+Some information is updated once a day (like calendar events). You can force a update of those events using http://[homebridge-ip]:7755/thedaily/reload.
+
 
 ## Config Options
 There are some additional config variables available:
