@@ -266,26 +266,40 @@ class DailySensors {
             })
 
             
+            
             expressApp.get(this.webPath+"/0", (request, response) => {
                 this.override = false;
                 this.syncSwitchState();           
-                response.send('Switch forced to trigger OFF.\n');
+                response.json({
+                    operation:'off',
+                    ok:true,
+                    ...this.JSONCommonResponse(request)
+                });
                 if (this.debug) this.log("received OFF");
             });
             expressApp.get(this.webPath+"/1", (request, response) => {
                 this.override = true;
                 this.syncSwitchState();          
-                response.send('Switch forced to trigger ON.\n');
+                response.json({
+                    operation:'on',
+                    ok:true,
+                    ...this.JSONCommonResponse(request)
+                });
                 if (this.debug) this.log("received ON");
             });
             expressApp.get(this.webPath+"/clear", (request, response) => {
                 this.override = undefined;
-                this.syncSwitchState();          
-                response.send('Switch operation normal.\n');
+                this.syncSwitchState();  
+
+                response.json({
+                    operation:'clear',
+                    ok:true,
+                    ...this.JSONCommonResponse(request)
+                });
                 if (this.debug) this.log("received CLEAR");
             });
             expressApp.get(this.webPath+"/state", (request, response) => {
-                response.send('Switch is ' + (this.getIsActive()?'ON':'OFF') + '\nOverride is ' + (this.override===undefined?'INACTIVE':'ACTIVE') + '\n');
+                response.json(this.JSONCommonResponse(request));
                 if (this.debug) this.log("received STATE");
             });
             expressApp.get(this.webPath+"/", (request, response) => {               
@@ -310,6 +324,22 @@ class DailySensors {
         }
         
         this.log("Finished Initialization");
+    }
+
+    JSONCommonResponse(request) {
+        const ovr = this.override === undefined ? undefined : {
+            forced:this.override,
+            actual:this.isActive
+        };
+        return {
+            accessory:{
+                name : this.config.name,
+                host : request.headers.host,                        
+                path : this.webPath
+            },
+            activeState:this.getIsActive(),
+            override:ovr
+        }
     }
 
     getIsActive() {
