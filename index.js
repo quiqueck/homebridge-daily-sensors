@@ -10,6 +10,7 @@ const suncalc = require('suncalc'),
 
 var Service, Characteristic, Accessory, UUIDGen;
 var WebServers = {};
+var WebPaths = {};
 const constantSolarRadiation = 1361 //Solar Constant W/m²
 const arbitraryTwilightLux = 6.32     // W/m² egal 800 Lux
 const TriggerTypes = Object.freeze({"event":1, "time":2, "altitude":3, "lux":4, "calendar":5});
@@ -253,6 +254,17 @@ class DailySensors {
                 WebServers[this.port] = expressApp;
             }
 
+            //get list of available paths on a port
+            var paths = WebPaths[this.port];
+            if (paths === undefined){
+                paths = [];
+                WebPaths[this.port] = paths;
+            }
+            paths.push({
+                path:this.webPath,
+                name:this.config.name
+            })
+
             
             expressApp.get(this.webPath+"/0", (request, response) => {
                 this.override = false;
@@ -289,6 +301,9 @@ class DailySensors {
                 }); 
                 expressApp.get("/css/bootstrap.min.css.map", (request, response) => {               
                     response.sendFile(path.join(__dirname, './css/bootstrap.min.css.map'));           
+                }); 
+                expressApp.get("/", (request, response) => {               
+                    response.send(this.buildIndexHTML());           
                 });  
             }
             this.log("HTTP listener started on port " + port + "  for path " + this.webPath + ".");
@@ -735,6 +750,17 @@ class DailySensors {
                 s += trigger.value;
         }
         s += ' (' + trigger.active + ')';
+        return s;
+    }
+
+    buildIndexHTML(){
+        let linksHTML = '';
+        WebPaths[this.port].forEach(p => {
+            linksHTML += '<li><a href="'+p.path+'">'+p.name+'</a></li>';
+        })
+        let s = fs.readFileSync(path.join(__dirname, './index.html'), { encoding: 'utf8' });
+
+        s = s.replace('\{\{LINKS\}\}', linksHTML);
         return s;
     }
 
