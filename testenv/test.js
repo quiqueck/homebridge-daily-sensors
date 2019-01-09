@@ -94,7 +94,7 @@ const s2 = {
 }
 const mymath = new (require('../lib/mymath.js'))(sensor)
 const mymath2 = new (require('../lib/mymath.js'))(s2)
-const code = mymath.compile("Time(self, '6:30 am').addMinutes(20) ");
+const code = mymath.compile("t = Time(self, '6:30 am').addMinutes(20);t>now");
 const code2 = mymath2.compile('dailyrandom(self,2, 10)');
 const scope = {    
     a : new mymath.Time(sensor, '23:30'),
