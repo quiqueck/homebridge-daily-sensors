@@ -265,13 +265,16 @@ This type allows you to write a logical expression to determinthe activation sta
     - `t.weekend()` : `true` if the represented date is sa or so.
     - `t.weekday()` : returns a number that represents a ISO-weekday (mo=1, tu=2, ...)
     - `t.time()` : returns just the time of the date
-    - `t.addMinutes(nr)` : adds `nr`-minutes to `t` and returns the new date.
-    - `events.isHoliday(Time)` : returns true if the date is a **public** or **bank** holiday. We use [date-holiday](https://www.npmjs.com/package/date-holidays) to check for holidays.
-    - `events.isHoliday(Time, [types])` : returns true if the date holiday and the type of that holiday (see [date-holiday](https://www.npmjs.com/package/date-holidays#types-of-holidays) ) is contained in the passed types-Array.
+    - `t.addMinutes(nr)` : adds `nr`-minutes to `t` and returns the new date.    
+    - `t.isHoliday([types])` : returns true if the date is a holiday **and** the type of that holiday (see [date-holiday](https://www.npmjs.com/package/date-holidays#types-of-holidays) ) is found in the passed types-Array.
+    - `t.isHoliday()` : Same as `t.isHoliday(['public', 'bank'])`.
+    - `t.calendarMatch(regex)` : true if the linked calendar has an event for the date `t` that matches the passed regexp.
+    - `t.isEvent(name)` : true if the passed solar event is active at the given time. See the **Event**-Type for possible values.
   - Constants
     - `altitude` : The current elevation of the sun in radians
     - `altitudeDeg` : The current elevation of the sun in degrees
     - `lux` : The current brightness
     - `now` : The current time and date
+    - `self` : References the sensor that is executing the expression
     
 
