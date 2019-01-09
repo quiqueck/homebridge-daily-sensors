@@ -55,11 +55,55 @@ const pseudoHomebridge = {
 };
 //const plugin = require('../index.js')(pseudoHomebridge);
 
-const username = "",
+/*const username = "",
       password = "",
       url = "";
 
 ical.loadEventsForDay(moment(), {url:url, username:username, password:password, type:'caldav'}, (list, start, end) => {
     //console.log(list);
     ical.eventsAt(moment(), list).map(e => console.log(e));
-});
+});*/
+
+//const code = mymath.compile('events.isHoliday(Time("2018-05-31 16:30:23"))');
+const sensor = {
+    dailyRandom:[],
+    config: {
+        location:{
+            country:'DE',
+            state:'BY'
+        }
+    },
+    posForTime:function(a) { return {altitude:1.2}; },
+    luxForTime:function(a, b) { return 2; },
+    matchesCalEventNow:function(a, b) { return false; },
+    fetchEventAt:function(a) { return false; },
+}
+
+const s2 = {
+    dailyRandom:[],
+    config: {
+        location:{
+            country:'DE',
+            state:'BY'
+        }
+    },
+    posForTime:function(a) { return {altitude:1.2}; },
+    luxForTime:function(a, b) { return 2; },
+    matchesCalEventNow:function(a, b) { return false; },
+    fetchEventAt:function(a) { return false; },
+}
+const mymath = new (require('../lib/mymath.js'))(sensor)
+const mymath2 = new (require('../lib/mymath.js'))(s2)
+const code = mymath.compile("now>Time(self, '6:30 am') & altitude<0.1 & now<Time(self, '9:00 pm') ");
+const code2 = mymath2.compile('dailyrandom(self,2, 10)');
+const scope = {    
+    a : new mymath.Time(sensor, '23:30'),
+    b : new mymath.Time(s2, '17:30')
+}
+const now = moment();
+console.log('a:', scope.b.toString())
+console.log('b:', scope.b.toString())
+console.log('now:', now.format('LLLL'))
+console.log(code.run(scope, now));
+console.log(code.run(scope, now));
+console.log(code2.run(scope, now));

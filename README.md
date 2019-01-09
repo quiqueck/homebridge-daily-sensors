@@ -26,7 +26,7 @@ The following configuration is based on the suns elevation (altitude) in London.
 The plugin calculates typical sun events as well as the suns elevation based on a given location. Each sensor has a given activation state at any given time of a day. Whenever the activation state changes, the Programmable switch is notified. If the state changes from **off to on**, a **single press** is sent. if it changes from **on to off** a **double press** is generated. The activation state is determined through an array of TriggerEvents.
 
 All TriggerEvent are stored in the `trigger:array` config variable. Each TriggerEvent has the following basic properties:
-- `type` : The type of the TriggerEvent (`time`, `altitude`, `lux` or `event`). 
+- `type` : The type of the TriggerEvent (`time`, `altitude`, `lux` `calendar`, `expression` or `event`). 
 - `value` : A given treshold that is compared 
 - `active` : The new activation state of the sensor if the TriggerEvent is triggered 
 
@@ -243,3 +243,35 @@ The following settings are available for the given TriggerEvent-Types.
 - `type` : `calendar`
 - `value` : A JavaScript RegExp. `Hello` will match any Event that contains the Word **Hello** (ie. 'Hello World', 'My Beautiful Hello', 'Hello'). `^Hello$` will only match Events where the summary is the Word **Hello** ('Hello World' and 'My Beautiful Hello' do not match).
 - `trigger` : 
+
+##### Expression
+This type allows you to write a logical expression to determinthe activation state. The underlying parser is [Math.js](http://mathjs.org/docs/core/extension.html) with a few custom extensions to handle some time and calendar based events.
+
+- `type` : `expression`
+- `value` : An logical expresion. You may use all functions available in [Math.js](http://mathjs.org/docs/core/extension.html), as well as the following expressions
+  - Functions
+    - `dailyrandom(nr, magnitude)` : creates a random value with index `nr` that is maintained for the entire day. You can use this to generate multiple random numbers for your expressions that do not change with each evaluation of the expression on the same day. The random value is generated between 0 (included) and `magnitude` (excluded).
+    - `dailyrandom(nr)` : same as `dailyrandom(nr, 1)`
+    - `dailyrandom()` : same as `dailyrandom(0, 1)`
+    - `Time("str")` : creates a date-object. Valid String Formats are `h:m a`, `H:m`, `h:m:s a`, `H:m:s`, `YYYY-MM-DD H:m:s`, `YYYY-MM-DD H:m`,`YYYY-MM-DD`, `YYYY-MM-DD h:m:s a`, `YYYY-MM-DD h:m a`. Time Values can be compared using `<`, `>` and `==`. Two date Values are equal if they match up to the second. In the following `t` represents a Time-constant.
+    - `t.mo()` : `true` if the represented date is a monday.
+    - `t.tu()` : `true` if the represented date is a tuesday.
+    - `t.we()` : `true` if the represented date is a wednesday.
+    - `t.th()` : `true` if the represented date is a thursday.
+    - `t.fr()` : `true` if the represented date is a friday.
+    - `t.sa()` : `true` if the represented date is a saturday.
+    - `t.so()` : `true` if the represented date is a sunday.
+    - `t.workday()` : `true` if the represented date is a mo through fr.
+    - `t.weekend()` : `true` if the represented date is sa or so.
+    - `t.weekday()` : returns a number that represents a ISO-weekday (mo=1, tu=2, ...)
+    - `t.time()` : returns just the time of the date
+    - `t.addMinutes(nr)` : adds `nr`-minutes to `t` and returns the new date.
+    - `events.isHoliday(Time)` : returns true if the date is a **public** or **bank** holiday. We use [date-holiday](https://www.npmjs.com/package/date-holidays) to check for holidays.
+    - `events.isHoliday(Time, [types])` : returns true if the date holiday and the type of that holiday (see [date-holiday](https://www.npmjs.com/package/date-holidays#types-of-holidays) ) is contained in the passed types-Array.
+  - Constants
+    - `altitude` : The current elevation of the sun in radians
+    - `altitudeDeg` : The current elevation of the sun in degrees
+    - `lux` : The current brightness
+    - `now` : The current time and date
+    
+

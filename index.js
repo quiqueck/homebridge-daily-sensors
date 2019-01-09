@@ -2,7 +2,8 @@
 const suncalc = require('suncalc'),
       moment = require('moment'),
       packageJSON = require("./package.json"),
-      path = require('path'),
+      path = require('path'),  
+      holidays = require('date-holidays'), //https://www.npmjs.com/package/date-holidays#supported-countries-states-regions    
       ical = require('./lib/iCal.js'),
       web =  require('./lib/web.js'),
       $ = require('./lib/helpers.js');
@@ -38,6 +39,7 @@ class DailySensors {
         }
         moment.locale(config.locale ? config.locale : 'en');
 
+        this.math = new (require('./lib/mymath.js'))(this);
         const self = this;        
         this.log = log;        
         this.override = undefined;
@@ -48,7 +50,15 @@ class DailySensors {
         this.isActive = false;
         this.currentLux = false;
         this.timeout = this.config.tickTimer ? this.config.tickTimer : 30000;
-        this.luxService = undefined;               
+        this.luxService = undefined; 
+        this.dailyRandom = [];  
+        if (this.config.location.country === undefined) {
+            this.holidays = {
+                isHoliday:function(date) { return false;}
+            }
+        } else {
+            this.holidays = new holidays(this.config.location.country, this.config.location.state, this.config.location.town);  
+        }
 
         this.parseTrigger(config.trigger);
 
@@ -159,6 +169,7 @@ class DailySensors {
             let value = '';
             let random = val.random;
             ID++;
+            let constants;
             switch(type){
                 case $.TriggerTypes.event:
                     value = $.EventTypes[val.value];
@@ -176,6 +187,29 @@ class DailySensors {
                 break;
                 case $.TriggerTypes.calendar:
                     value = val.value; //regex
+                break;
+                case $.TriggerTypes.expression:
+                    val.active = true;
+                    val.trigger = 'both';
+
+                    //we need this cause we cannot bind the context to our methods.
+                    //we know that falling back to string replacements is a very bad idea :()
+                    var withSelf = val.value.replace(/(Time\()\s*(['"])\s*([\d:. ]+(am|pm)?)\s*(\2)\s*(\))/gm, '$1self, $2$3$5$6');
+                    withSelf = withSelf.replace(/(dailyrandom\()\s*(\))/gm, '$1self$2');
+                    withSelf = withSelf.replace(/(dailyrandom\()\s*([+-]?\d+(\.\d+)?)\s*((,)\s*([+-]?\d+(\.\d+)?))?\s*(\))/gm, '$1self, $2$5$6$8');
+                    if (this.debug) console.log("Rewrote expression:", withSelf);
+                    value = this.math.compile(withSelf); //string                    
+                    constants = {};
+                    for(var n in val.constants) {
+                        const r = /(Time\()\s*([\d:. ]+(am|pm)?)\s*(\))/gm
+                        let v = val.constants[n];
+                        if (val.constants[n] !== undefined && val.constants[n].replace) {                           
+                            if (v.match(r)){
+                                v = new this.math.Time(this, val.constants[n].replace(r, '$2'));
+                            } 
+                        }
+                        constants[n] = v;
+                     }
                 break;
                 default:
                     return;
@@ -197,7 +231,8 @@ class DailySensors {
                 when: $.TriggerWhen[val.trigger ? val.trigger : 'greater'],
                 op:op,
                 random: random,
-                daysOfWeek: daysOfWeek
+                daysOfWeek: daysOfWeek,
+                constants:constants
             });
         });
         if (this.debug) this.log(this.triggers);
@@ -314,6 +349,8 @@ class DailySensors {
             if (this.debug) this.log(moment(event.when).format('LTS'), event.event, $.formatRadians(event.pos.altitude), Math.round(event.lux));
         });
 
+        this.dailyRandom = [];
+
         this.triggers.forEach(trigger => {
             let r = trigger.random ? trigger.random : 0;
             if (r==0){
@@ -425,6 +462,9 @@ class DailySensors {
             break;
             case $.TriggerTypes.calendar:
                 changeByTrigger(trigger, this.matchesCalEventNow(when, trigger.value) );
+            break;
+            case $.TriggerTypes.expression:
+                changeByTrigger(trigger, trigger.value.run(trigger.constants, when) );
             break;
             default:
 
