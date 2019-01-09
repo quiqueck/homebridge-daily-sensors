@@ -215,8 +215,8 @@ class DailySensors {
         alt *= Math.PI/2;
         
 
-        //console.log(pos.altitude- alt, minRad, Math.sin(alt) * 100000);
-        return Math.sin(alt) * 100000;
+        //console.log(pos.altitude- alt, minRad, Math.sin(alt) * 10000);
+        return Math.sin(alt) * 10000;
     }
 
     //https://web.archive.org/web/20170819110438/http://www.domoticz.com:80/wiki/Real-time_solar_data_without_any_hardware_sensor_:_azimuth,_Altitude,_Lux_sensor...
