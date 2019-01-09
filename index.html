@@ -38,6 +38,7 @@
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2 text-muted">Activation State: <b id="state"></b></h6>
                     <p class="card-text">
+                        <h7 class="card-subtitle mb-2 text-muted">Homebridge State: <b id="hbstate"></b></h7>
                         <div style="margin-left:10px;margin-bottom:20px" id="override">
                             Forced: <span id="forced"></span><br>
                             Actual: <span id="actual"></span><br>
@@ -66,6 +67,7 @@
     <script type="text/javascript">
         function updateAccesory(card, info, repeat){            
             card.find('#state').text(info.activeState ? 'ON' : 'OFF');
+            card.find('#hbstate').text(info.homebridgeState === undefined ? 'unknown' : (info.homebridgeState ? 'ON' : 'OFF'));
             if (info.override===undefined) {
                 card.find('#override').css('display', 'block');
                 card.find('#override').addClass('text-muted');
@@ -133,7 +135,7 @@
                     addButtonClick(card.find('#clear'), card, sensor, 'clear', 'reset');
                     addButtonClick(card.find('#reload'), card, sensor, 'reload', 'reload the event-data of');
 
-                    updateAccesory(card, sensor.info, 1000);
+                    updateAccesory(card, sensor.info, 2500);
                     card.appendTo('[haveCards]');
                 });
             })

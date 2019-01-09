@@ -23,6 +23,7 @@ module.exports = function(homebridge) {
     Characteristic = homebridge.hap.Characteristic;
     UUIDGen = homebridge.hap.uuid;
 
+    web.setCharacteristics(Characteristic);
     homebridge.registerAccessory("homebridge-daily-sensors", "DailySensors", DailySensors);
 }
 
@@ -454,6 +455,23 @@ class DailySensors {
     updateState(when) {
         if (when === undefined) when = new Date();
 
+        //make sure the switch has the same state
+        this.currentSwitchValue = this.switchService
+            .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+            .value;
+        if (this.override === undefined) {
+            if (this.currentSwitchValue != Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS && !this.getIsActive()) {
+                console.log("FORCE SEND DOUBLE_PRESS");
+                this.syncSwitchState();            
+            } else if (this.currentSwitchValue != Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS && this.getIsActive()) {
+                console.log("FORCE SEND SINGLE_PRESS");
+                this.syncSwitchState();
+            } else {
+                //this.syncSwitchState();
+            }
+            //console.log("STATE", val, Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS, Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+        }
+
         const obj = this.testIfActive(when);
         const pos = obj.pos;
         const newLux = obj.lux;
@@ -488,5 +506,9 @@ class DailySensors {
         this.switchService
             .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
             .setValue(this.getIsActive() ? Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS : Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+
+        this.currentSwitchValue = this.switchService
+            .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
+            .value;
     }
 }
