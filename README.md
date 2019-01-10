@@ -149,23 +149,22 @@ There are some additional config variables available:
 - `debug:bool`: Wether you want to log some additional debug information (warning: this will generate a lot of output, defaults to false, `"debug":false`)
 - `locale:string`: The local used to parse date/time related values (like weekdays, defaults to english, `"locale":"en"`)
 
+### Regional Holidays
 When you want to addres holidays in your expressions, you need to configure the lecation where you want to look up the holidays. You need to at least specify a country, all other values are optional:
 - `location.country:string`
 - `location.state:string`
 - `location.town:string`
 See [date-holiday](https://www.npmjs.com/package/date-holidays#supported-countries-states-regions) for possibal region codes.
-For **Melbourne** you would configure your location like this:
+For a Sensor in **Melbourne** that enables the switch when the current day is a holiday you would use the following Configuration:
 ```json
   "accessories": [{
       "accessory": "DailySensors",
-      "name":"TheDaily",
+      "name":"Holiday",
       "port":7755,
       "dayStartsActive":false,    
       "trigger":[{
-            "active":true,
-            "type":"altitude",
-            "value":"0.03",
-            "trigger":"both"
+            "type":"expression",
+            "value":"now.isHoliday()",            
       }],
       "location":{
         "longitude":144.96332,
