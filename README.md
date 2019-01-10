@@ -26,7 +26,7 @@ The following configuration is based on the suns elevation (altitude) in London.
 The plugin calculates typical sun events as well as the suns elevation based on a given location. Each sensor has a given activation state at any given time of a day. Whenever the activation state changes, the Programmable switch is notified. If the state changes from **off to on**, a **single press** is sent. if it changes from **on to off** a **double press** is generated. The activation state is determined through an array of TriggerEvents.
 
 All TriggerEvent are stored in the `trigger:array` config variable. Each TriggerEvent has the following basic properties:
-- `type` : The type of the TriggerEvent (`time`, `altitude`, `lux` `calendar`, `expression` or `event`). 
+- `type` : The type of the TriggerEvent (`time`, `altitude`, `lux` `calendar`, `holiday`, `expression` or `event`). 
 - `value` : A given treshold that is compared 
 - `active` : The new activation state of the sensor if the TriggerEvent is triggered 
 
@@ -265,12 +265,28 @@ The following settings are available for the given TriggerEvent-Types.
 ##### Event
 - `type` : `event`
 - `value` : one of the following event types `nightEnd`, `nauticalDawn`, `dawn`, `sunrise`, `sunriseEnd`, `goldenHourEnd`, `solarNoon`, `goldenHour`, `sunsetStart`, `sunset`, `dusk`, `nauticalDusk`, `night`, `nadir`
-- `trigger` : 
+- `trigger` : Notwithstanding the default behaviour the following settings are allowed for this property:
+  - `match` : The Trigger Event is triggered when the specified event is currently active. The activation state is set to the value specified in the `active`-property.
+  - `no-match` : The Trigger Event is triggered when the specified event is **not** currently active. The activation state is set to the **inverse** value specified in the `active`-property.
+  - `always` : The Trigger Event is allways triggered. If the pecified event is currently active, the activation state is set to the value specified in the `active`-property. Otherwise it is set to the inverse.
 
 ##### Calendar Event
 - `type` : `calendar`
 - `value` : A JavaScript RegExp. `Hello` will match any Event that contains the Word **Hello** (ie. 'Hello World', 'My Beautiful Hello', 'Hello'). `^Hello$` will only match Events where the summary is the Word **Hello** ('Hello World' and 'My Beautiful Hello' do not match).
-- `trigger` : 
+- `trigger` : Notwithstanding the default behaviour the following settings are allowed for this property:
+  - `match` : The Trigger Event is triggered when at least one calendar event was found for the current time and the summary matches the specified regexp . The activation state is set to the value specified in the `active`-property.
+  - `no-match` : The Trigger Event is triggered when no valid calendar event was found. The activation state is set to the **inverse** value specified in the `active`-property.
+  - `always` : The Trigger Event is allways triggered. If a valid calendar event was found, the activation state is set to the value specified in the `active`-property. Otherwise it is set to the inverse.
+ 
+
+##### Holiday
+In order to use holiday triggers, you need to configure your Region. See **Regional Holidays** above for details. The event triggers when the current day is a holiday and the type of the holiday is found in the array passed as `value`-property. See [date-holiday](https://www.npmjs.com/package/date-holidays#types-of-holidays) for more info on available holiday types.
+- `type` : `holiday`
+- `value` : An array containing a list of valid holiday types. Default is `value:["public", "bank"]`.
+- `trigger` : Notwithstanding the default behaviour the following settings are allowed for this property:
+  - `match` : The Trigger Event is triggered when the day is a valid holiday. The activation state is set to the value specified in the `active`-property.
+  - `no-match` : The Trigger Event is triggered when the day is **not** a valid holiday. The activation state is set to the **inverse** value specified in the `active`-property.
+  - `always` : The Trigger Event is allways triggered. If the day is a valid holiday, the activation state is set to the value specified in the `active`-property. Otherwise it is set to the inverse.
 
 ##### Expression
 This type allows you to write a logical expression to determinthe activation state. The underlying parser is [Math.js](http://mathjs.org/docs/core/extension.html) with a few custom extensions to handle some time and calendar based events.

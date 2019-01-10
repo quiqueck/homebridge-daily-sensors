@@ -188,9 +188,12 @@ class DailySensors {
                 case $.TriggerTypes.calendar:
                     value = val.value; //regex
                 break;
+                case $.TriggerTypes.holiday:
+                    value = val.value; //array
+                break;
                 case $.TriggerTypes.expression:
-                    val.active = true;
-                    val.trigger = 'both';
+                    val.active = val.active == undefined ? true : val.active;
+                    val.trigger = val.trigger == undefined ? 'both' : val.trigger;
 
                     //we need this cause we cannot bind the context to our methods.
                     //we know that falling back to string replacements is a very bad idea :()
@@ -388,6 +391,18 @@ class DailySensors {
         return events.length > 0;
     }
 
+    isHoliday(when, types) {
+        if (types === undefined) types = ['public', 'bank'];
+        if (types.length === undefined) types = [types];
+        const h = this.holidays.isHoliday(when);
+        //console.log(time.toString(), h);
+        if (h !== false){
+            return types.indexOf(h.type)>=0;
+        } else {
+            return false;
+        }
+    }
+
     queueNextEvent() {
         const now = moment();
         const day = moment({h: 0, m: 0, s: 1});
@@ -462,6 +477,9 @@ class DailySensors {
             break;
             case $.TriggerTypes.calendar:
                 changeByTrigger(trigger, this.matchesCalEventNow(when, trigger.value) );
+            break;
+            case $.TriggerTypes.holiday:
+                changeByTrigger(trigger, this.isHoliday(when, trigger.value) );
             break;
             case $.TriggerTypes.expression:
                 changeByTrigger(trigger, trigger.value.run(trigger.constants, when) );
