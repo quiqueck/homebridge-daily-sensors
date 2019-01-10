@@ -326,6 +326,8 @@ This type allows you to write a logical expression to determinthe activation sta
   - Constants
     - `altitude` : The current elevation of the sun in radians
     - `altitudeDeg` : The current elevation of the sun in degrees
+    - `azimuth` : The suns current azimuth in radians
+    - `azimuthDeg` : The suns current azimuth in degrees
     - `lux` : The current brightness
     - `now` : The current time and date
     - `self` : References the sensor that is executing the expression
