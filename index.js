@@ -50,6 +50,7 @@ class DailySensors {
         this.isActive = false;
         this.currentLux = false;
         this.timeout = this.config.tickTimer ? this.config.tickTimer : 30000;
+        this.dayStart = this.config.dayStartsActive ? this.config.dayStartsActive : false;
         this.luxService = undefined; 
         this.dailyRandom = [];  
         if (this.config.location.country === undefined) {
@@ -491,7 +492,8 @@ class DailySensors {
         return result;
     }
 
-    testIfActive(when) {
+    testIfActive(when, triggerList) {
+        if (triggerList === undefined) triggerList = this.triggers;
         const pos = this.posForTime(when);
         const newLux = this.luxForTime(when, pos);
         let obj = {
@@ -502,9 +504,9 @@ class DailySensors {
         };
         
         const self = this;
-        let result = this.config.dayStartsActive ? this.config.dayStartsActive : false;               
+        let result = this.dayStart;               
         if (this.debug) this.log("Starting day with result   -- " + result);    
-        this.triggers.forEach(trigger => result = self.testTrigger(trigger, when, obj, result, false, false));
+        triggerList.forEach(trigger => result = self.testTrigger(trigger, when, obj, result, false, false));
 
         obj.active = result;
         return obj;
@@ -568,5 +570,19 @@ class DailySensors {
         this.currentSwitchValue = this.switchService
             .getCharacteristic(Characteristic.ProgrammableSwitchEvent)
             .value;
+    }
+
+    iterateDay(cb, startYesterday, deltaMinutes){
+        if (startYesterday === undefined) startYesterday = false;
+        if (deltaMinutes === undefined) deltaMinutes = 1;
+        let iterations = Math.round(24*60 / deltaMinutes) + (startYesterday?2:1);
+        let time = moment().startOf('day').subtract(startYesterday?deltaMinutes:0, 'minutes');    
+    
+        while (iterations>0) {
+            cb(iterations, time);
+            
+            time.add(deltaMinutes, 'minutes');
+            iterations--;
+        }
     }
 }
