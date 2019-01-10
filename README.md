@@ -276,6 +276,15 @@ The following settings are available for the given TriggerEvent-Types.
 This type allows you to write a logical expression to determinthe activation state. The underlying parser is [Math.js](http://mathjs.org/docs/core/extension.html) with a few custom extensions to handle some time and calendar based events.
 
 - `type` : `expression`
+- `constants` : List of constants you can use in your expression. You can add time values with a String like `Time(15:30)`. For example:
+```json
+"constants":{
+    "tm":"Time(6:30)",
+    "nm":"Vacation",
+    "nr":42
+} 
+```
+
 - `value` : An logical expresion. You may use all functions available in [Math.js](http://mathjs.org/docs/core/extension.html), as well as the following expressions
   - Functions
     - `dailyrandom(nr, magnitude)` : creates a random value with index `nr` that is maintained for the entire day. You can use this to generate multiple random numbers for your expressions that do not change with each evaluation of the expression on the same day. The random value is generated between 0 (included) and `magnitude` (excluded).
