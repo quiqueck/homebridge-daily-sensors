@@ -76,7 +76,11 @@
             } else {
                 card.find('#override').css('display', 'block');
                 card.find('#override').removeClass('text-muted');
-                card.find('#forced').text(info.override.forced ? 'ON' : 'OFF');
+                if (info.bluetoothSwitch.type == 0) {
+                    card.find('#forced').text(info.override.forced!=0 ? 'ON' : 'OFF');
+                } else {
+                    card.find('#forced').text(info.override.forced==0 ? 'DOUBLE' : (info.override.forced==1 ? 'SINGLE' : 'LONG'));
+                }
                 card.find('#actual').text(info.override.actual ? 'ON' : 'OFF');
             }
 
@@ -125,6 +129,7 @@
         $.get( "/accessories")
             .done(function(d) {
                 console.log( "Received Accesory List", d.accessories );
+                let nr = 0;
                 $.each(d.accessories, (idx, sensor) => {
                     let card = $('templates div[template=sensorcard]').clone();
                     card.find('#title').text(sensor.name);
@@ -136,7 +141,7 @@
                     addButtonClick(card.find('#reload'), card, sensor, 'reload', 'reload the event-data of');
 
                     updateAccesory(card, sensor.info, 2500);
-                    card.appendTo('[haveCards]');
+                    card.appendTo('[haveCards]');                    
                 });
             })
             .fail(function(e) {
