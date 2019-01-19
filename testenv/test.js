@@ -5,7 +5,8 @@ const suncalc = require('suncalc'),
     fs = require('fs'),
     icalExpander = require('ical-expander'),
     xmlParser = require('xml-js'),
-    ical = require('../lib/iCal.js');
+    ical = require('../lib/iCal.js'),
+    ble = require('../lib/ble.js')({info:console.log, debug:console.log, error:console.error}, ['99b97d90d3e8454881f5489e959bc4f7']);
 
 const sampleConfig = require('./sampleConfig.json');
 
@@ -79,7 +80,7 @@ const sensor = {
     fetchEventAt:function(a) { return false; },
 }
 
-const s2 = {
+/*const s2 = {
     dailyRandom:[],
     config: {
         location:{
@@ -106,4 +107,6 @@ console.log('b:', scope.b.toString())
 console.log('now:', now.format('LLLL'))
 console.log(code.run(scope, now));
 console.log(code.run(scope, now));
-console.log(code2.run(scope, now));
+console.log(code2.run(scope, now));*/
+
+console.log("Started");
