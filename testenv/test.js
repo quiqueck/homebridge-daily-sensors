@@ -6,7 +6,9 @@ const suncalc = require('suncalc'),
     icalExpander = require('ical-expander'),
     xmlParser = require('xml-js'),
     ical = require('../lib/iCal.js'),
-    ble = require('../lib/ble.js')({info:console.log, debug:console.log, error:console.error}, ['99b97d90d3e8454881f5489e959bc4f7']);
+    ble = require('../lib/ble.js')({info:console.log, debug:console.log, error:console.error}, ['99b97d90d3e8454881f5489e959bc4f7'], (json)=>{
+        console.log("got data ", json);
+    });
 
 const sampleConfig = require('./sampleConfig.json');
 
