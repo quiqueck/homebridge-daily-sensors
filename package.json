@@ -11,7 +11,7 @@
     "mathjs": "^5.4.0",
     "moment": "^2.23.0",
     "moment-range": "^4.0.1",
-    "noble": "^1.9.1",
+    "noble": "git+https://github.com/noble/noble.git#pull/840/head",
     "path": "^0.12.7",
     "suncalc": "^1.8.0",
     "xml-js": "^1.6.8"
