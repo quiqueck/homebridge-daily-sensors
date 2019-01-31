@@ -76,13 +76,14 @@ const sensor = {
             state:'BY'
         }
     },
+    bluetooth:{lastEvent:{when:new Date()}},
     posForTime:function(a) { return {altitude:1.2}; },
     luxForTime:function(a, b) { return 2; },
     matchesCalEventNow:function(a, b) { return false; },
     fetchEventAt:function(a) { return false; },
 }
 
-/*const s2 = {
+const s2 = {
     dailyRandom:[],
     config: {
         location:{
@@ -108,7 +109,7 @@ console.log('a:', scope.b.toString())
 console.log('b:', scope.b.toString())
 console.log('now:', now.format('LLLL'))
 console.log(code.run(scope, now));
-console.log(code.run(scope, now));
-console.log(code2.run(scope, now));*/
+console.log(typeof(code.run(scope, now)));
+console.log(typeof(code2.run(scope, now)));
 
 console.log("Started");
