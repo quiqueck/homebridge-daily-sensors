@@ -98,8 +98,9 @@ const s2 = {
 }
 const mymath = new (require('../lib/mymath.js'))(sensor)
 const mymath2 = new (require('../lib/mymath.js'))(s2)
-const code = mymath.compile("t = Time(self, '6:30 am').addMinutes(20);t>now");
-const code2 = mymath2.compile('dailyrandom(self,2, 10)');
+//const code = mymath.compile("t = Time(self, '6:30 am').addMinutes(20);t>now");
+const code = mymath.compile("dailyrandom(self,2, 10)");
+const code2 = mymath2.compile('when(dailyrandom(self,2, 10)>5, ON, OFF)');
 const scope = {    
     a : new mymath.Time(sensor, '23:30'),
     b : new mymath.Time(s2, '17:30')
@@ -110,6 +111,6 @@ console.log('b:', scope.b.toString())
 console.log('now:', now.format('LLLL'))
 console.log(code.run(scope, now));
 console.log(typeof(code.run(scope, now)));
-console.log(typeof(code2.run(scope, now)));
+console.log(code2.run(scope, now));
 
 console.log("Started");
