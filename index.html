@@ -45,6 +45,7 @@
                         </div>
                         <button type="button" class="btn btn-success" id="on">On</button>
                         <button type="button" class="btn btn-danger" id="off">Off</button>
+                        <button type="button" class="btn btn-primary" id="altOn">Long</button>
                         <button type="button" class="btn btn-info" style="margin-left:10px" id="clear">Reset</button>
                         
                     </p>
@@ -59,15 +60,21 @@
         
         <div id="content" >            
             <h1 style="margin-bottom:30px">Daily Sensors ({{VERSION}})</h1>
-            <div id="alerts"></div>
+            
             <div class="card-deck" haveCards>
             </div>
+            <div id="alerts"></div>
         </div>
     </body>
     <script type="text/javascript">
         function updateAccesory(card, info, repeat){            
             card.find('#state').text(info.activeState ? 'ON' : 'OFF');
-            card.find('#hbstate').text(info.homebridgeState === undefined ? 'unknown' : (info.homebridgeState ? 'ON' : 'OFF'));
+
+            if (info && info.bluetoothSwitch && info.bluetoothSwitch.type != 0){
+                card.find('#hbstate').text(info.homebridgeState==0 ? 'DOUBLE' : (info.homebridgeState==1 ? 'SINGLE' : 'LONG'));
+            } else {
+                card.find('#hbstate').text(info.homebridgeState === undefined ? 'unknown' : (info.homebridgeState ? 'ON' : 'OFF'));
+            }
             if (info.override===undefined) {
                 card.find('#override').css('display', 'block');
                 card.find('#override').addClass('text-muted');
@@ -135,8 +142,16 @@
                     card.find('#title').text(sensor.name);
                     card.find('#details').attr('href', sensor.path);
 
+                    console.log("info", sensor);
                     addButtonClick(card.find('#on'), card, sensor, '1', 'turn on');
                     addButtonClick(card.find('#off'), card, sensor, '0', 'turn off');
+                    if (sensor.info && sensor.info.bluetoothSwitch && sensor.info.bluetoothSwitch.type != 0){
+                        addButtonClick(card.find('#altOn'), card, sensor, '2', 'send long');
+                        card.find('#on').text('1x');
+                        card.find('#off').text('2x');
+                    } else {
+                        card.find('#altOn').hide();
+                    }
                     addButtonClick(card.find('#clear'), card, sensor, 'clear', 'reset');
                     addButtonClick(card.find('#reload'), card, sensor, 'reload', 'reload the event-data of');
 
