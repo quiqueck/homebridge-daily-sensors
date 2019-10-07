@@ -182,8 +182,8 @@
                         addButtonClick(card.find('#on'), card, sensor, '1', 'turn on');
                         addButtonClick(card.find('#off'), card, sensor, '0', 'turn off');
                     } else if (sensor.type == 2) {
-                        addButtonCB(card.find('#on'), card, sensor, {state:true}, 'send on state report');
-                        addButtonCB(card.find('#off'), card, sensor, {state:false}, 'send off state report');
+                        addButtonCB(card.find('#on'), card, sensor, {on:true}, 'send on state report');
+                        addButtonCB(card.find('#off'), card, sensor, {on:false}, 'send off state report');
                     }
                     if (sensor.info && sensor.info.bluetoothSwitch && sensor.info.bluetoothSwitch.type != 0){
                         addButtonClick(card.find('#altOn'), card, sensor, '2', 'send long');
