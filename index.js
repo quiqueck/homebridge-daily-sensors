@@ -20,9 +20,11 @@ module.exports = function(homebridge) {
 
     const DailySensor = require('./lib/Sensor.js')(Service, Characteristic).DailySensor;
     const DailyGroup = require('./lib/Group.js')(Service, Characteristic, DailySensor).DailyGroup;
-    const DailyPlatform = require('./lib/Platform.js')(Service, Characteristic, Accessory, UUIDGen, DailySensor, DailyGroup).DailyPlatform;
+    const DailySocket = require('./lib/DailySocket.js')(Service, Characteristic).DailySocket;
+    const DailyPlatform = require('./lib/Platform.js')(Service, Characteristic, Accessory, UUIDGen, DailySensor, DailyGroup, DailySocket).DailyPlatform;
     //console.log(DailySensor, DailyGroup)
     homebridge.registerAccessory("homebridge-daily-sensors", "DailySensors", DailySensor);
     homebridge.registerAccessory("homebridge-daily-sensors", "DailyGroup", DailyGroup);
+    homebridge.registerAccessory("homebridge-daily-sensors", "DailySocket", DailySocket);
     homebridge.registerPlatform("homebridge-daily-sensors", "DailyPlatform", DailyPlatform, true);
 }

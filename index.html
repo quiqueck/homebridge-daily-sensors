@@ -33,7 +33,16 @@
                     </button>
                     <span id="message"></span>
                 </div>
-            <div class="card" style="width: 18rem; max-width: 18rem" template='sensorcard'>
+                <div class="card" style="width: 18rem; max-width: 18rem" template='sensorcard2'>
+                    <h5 class="card-header" id="title"></h5>  
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Activation State: <b id="state"></b></h6>
+
+                        <button type="button" class="btn btn-success" id="on">On</button>
+                        <button type="button" class="btn btn-danger" id="off">Off</button>
+                    </div>
+                </div>
+            <div class="card" style="width: 18rem; max-width: 18rem" template='sensorcard1'>
                 <h5 class="card-header" id="title"></h5>                
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2 text-muted">Activation State: <b id="state"></b></h6>
@@ -120,6 +129,7 @@
         }
 
         function addButtonClick(button, card, sensor, command, description){
+
             button.click(event => {
                 $.get(sensor.path + '/' + command)
                     .done(d => {
@@ -133,18 +143,48 @@
             });
         }
 
+        function addButtonCB(button, card, sensor, json, description){
+            
+            button.click(event => {
+                $.ajax({
+                    url: sensor.path + '/cb', 
+                    type: "POST",
+                    data: JSON.stringify(json),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8"
+                })
+                    .done(d => {
+                        console.log(json, d);
+                        if (!d.ok){
+                            pushAlert('alert', 'Could not ' + description + ' the sensor <b>'+sensor.name+'</b> ('+sensor.path+').<br>Error was: <em>' + d.error + '</em>', true);
+                        } else {
+                            pushAlert('alertsuccess', 'Did succesfully <strong>' + description + '</strong> the sensor <b>'+sensor.name+'</b> ('+sensor.path+').', true); 
+                        }
+                        updateAccesory(card, d);
+                    }).fail(e => {
+                        console.error(json, e, e.status, e.statusText); 
+                        pushAlert('alert', 'Could not ' + description + ' the sensor <b>'+sensor.name+'</b> ('+sensor.path+').<br>Error was: <em>' + e.status + ' ' + e.statusText + ' ('+e.state()+')</em>', true);                                                
+                    });
+            });
+        }
+
         $.get( "/accessories")
             .done(function(d) {
                 console.log( "Received Accesory List", d.accessories );
                 let nr = 0;
                 $.each(d.accessories, (idx, sensor) => {
-                    let card = $('templates div[template=sensorcard]').clone();
+                    let card = $('templates div[template=sensorcard'+sensor.type+']').clone();
                     card.find('#title').text(sensor.name);
                     card.find('#details').attr('href', sensor.path);
 
                     console.log("info", sensor);
-                    addButtonClick(card.find('#on'), card, sensor, '1', 'turn on');
-                    addButtonClick(card.find('#off'), card, sensor, '0', 'turn off');
+                    if (sensor.type == 1) {
+                        addButtonClick(card.find('#on'), card, sensor, '1', 'turn on');
+                        addButtonClick(card.find('#off'), card, sensor, '0', 'turn off');
+                    } else if (sensor.type == 2) {
+                        addButtonCB(card.find('#on'), card, sensor, {state:true}, 'send on state report');
+                        addButtonCB(card.find('#off'), card, sensor, {state:false}, 'send off state report');
+                    }
                     if (sensor.info && sensor.info.bluetoothSwitch && sensor.info.bluetoothSwitch.type != 0){
                         addButtonClick(card.find('#altOn'), card, sensor, '2', 'send long');
                         card.find('#on').text('1x');
