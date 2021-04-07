@@ -1,7 +1,7 @@
 {
   "name": "homebridge-daily-sensors",
-  "version": "0.6.3-alpha.029",
-  "description": "Daytime Sensor Plugin for Homebridge that provides a list of randomizable predefined (and customizable) sensors that trigger at certain daily events (like sunrise), events from your personal calendar, sun elevations, times or lux levels.",
+  "version": "0.6.4",
+  "description": "[alpha] Daytime Sensor Plugin for Homebridge that provides a list of randomizable predefined (and customizable) sensors that trigger at certain daily events (like sunrise), events from your personal calendar, sun elevations, times or lux levels.",
   "main": "index.js",
   "dependencies": {
     "axios": "^0.21.1",
@@ -33,7 +33,8 @@
     "time",
     "randomized",
     "calendar",
-    "switch"
+    "switch",
+    "alpha"
   ],
   "repository": {
     "type": "git",
