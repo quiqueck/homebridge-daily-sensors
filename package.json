@@ -10,6 +10,8 @@
     "express": "^4.17.1",
     "ical-expander": "^2.1.0",
     "mathjs": "^5.10.3",
+    "minimist": ">=0.2.1",
+    "mkdirp": "^1.0.4",
     "moment": "^2.29.1",
     "moment-range": "^4.0.2",
     "path": "^0.12.7",
